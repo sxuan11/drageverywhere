@@ -1,6 +1,12 @@
 <template>
   <div class="c-item">
     video{{text}}
+    <div class="c-item-item">
+      是的
+      <div>
+        再嵌套
+      </div>
+    </div>
   </div>
 </template>
 
@@ -18,10 +24,11 @@ export default {
 
 <style lang="scss" scoped>
 .c-item {
-  height: 90px;
+  height: 100%;
   background-color: #42b983;
-  width: 160px;
+  width: 100%;
   border: aqua 1px solid;
   cursor: move;
+  box-sizing: border-box;
 }
 </style>
