@@ -14,6 +14,7 @@ function isHTMLElement(obj){
     return false;
   }
 }
+
 /**
  * 搜索是否是拖动盒子的子节点
  * @param childNode html节点
@@ -61,6 +62,12 @@ function objectToString(object) {
   return str;
 }
 
+/**
+ * 设定html元素样式
+ * @param element
+ * @param styleObject
+ * @returns {*}
+ */
 function setObjectStyle(element, styleObject) {
   if (typeof styleObject !== 'object') {
     throw new Error(`${styleObject} must be an object`);
@@ -151,16 +158,32 @@ class Drag extends EventEmitter{
   mouseDownEvent = '';
   // 拖拽区和源区域的映射关系
   sourceMap = new Map();
-  initBoxWidth = '300px';
-  initBoxHeight = '172px';
+  initBoxWidth = 300;
+  initBoxHeight = '';
+  dragMaxWidth = 600;
+  dragMaxHeight = 0;
+  dragMinWidth = 100;
+  dragMinHeight = 0;
   dragNumber = 0;
   baseStyle = {
     position: 'absolute',
     width: '8px',
     height: '8px',
     zIndex: 5000,
+  };
+  aspectRatio = '16:9';
+  ratio= 0;
+  unit= 'px';
+  boxWidth = 0;
+  boxHeight = 0;
+  dragBoxInfo= {
+    dragBoxNowWidth : 0,
+    dragBoxNowHeight : 0,
+    dragBoxLeft: 0,
+    dragBoxTop: 0,
   }
 
+  direction = '';
   /**
    * 构造函数
    * @param sourceBox
@@ -170,8 +193,11 @@ class Drag extends EventEmitter{
    * @param initBoxHeight
    * @param initBoxWidth
    * @param dragNumber
+   * @param aspectRatio
+   * @param dragMinWidth
+   * @param dragMaxWidth
    */
-  constructor({sourceBox, dragBox, dragTargetClassName, imgs, initBoxHeight ,initBoxWidth, dragNumber}) {
+  constructor({sourceBox, dragBox, dragTargetClassName, imgs, initBoxHeight ,initBoxWidth, dragNumber, aspectRatio='16:9' ,dragMinWidth , dragMaxWidth}) {
     super();
     this.sourceBox = sourceBox;
     this.dragBox = dragBox;
@@ -179,8 +205,12 @@ class Drag extends EventEmitter{
     this.dragTargetClassName = dragTargetClassName;
     this.initBoxHeight = initBoxHeight ? initBoxHeight : this.initBoxHeight;
     this.initBoxWidth = initBoxWidth ? initBoxWidth : this.initBoxWidth;
+    this.dragMaxWidth = dragMaxWidth ? dragMaxWidth : this.dragMaxWidth;
+    this.dragMinWidth = dragMinWidth ? dragMinWidth : this.dragMinWidth;
+    this.aspectRatio = aspectRatio;
     this.dragNumber = dragNumber;
     this.searchOriginPoint();
+    this.calculateLength();
     this.startListener();
   }
 
@@ -199,8 +229,32 @@ class Drag extends EventEmitter{
     this.yLength = r.height;
   }
 
+  calculateLength() {
+    if(this.initBoxHeight){
+      this.ratio = this.initBoxWidth / this.initBoxHeight;
+    }else {
+      if(!this.aspectRatio.includes(':')){
+        throw new Error(`aspectRatio param must be an X:Y`)
+      }
+      const result = this.aspectRatio.split(':');
+      this.ratio = result[0] / result[1];
+    }
+    this.calculateHeight();
+  }
+
+  calculateHeight() {
+    if(!this.initBoxHeight){
+      this.initBoxHeight = this.initBoxWidth / this.ratio;
+    }
+    this.dragMaxHeight = this.dragMaxWidth / this.ratio;
+    this.dragMinHeight = this.dragMinWidth / this.ratio;
+  }
+
+  // 窗口宽高发生改变上传事件
   changeWidthAndHeight() {
     const { height, width } = document.body.getBoundingClientRect();
+    this.boxWidth = width;
+    this.boxHeight = height;
     this.emit('changeWidthAndHeight', { height, width })
   }
 
@@ -259,7 +313,7 @@ class Drag extends EventEmitter{
       width: getRectWidth(this._mirrorRect) + 'px',
       height : getRectHeight(this._mirrorRect) + 'px',
       position : 'fixed',
-      zIndex: '9999',
+      'z-index': '9999',
       opacity: '.5',
       top: (node.clientY - (node.clientY - this._mirrorRect.top)) + 'px',
       left: (node.clientX - (node.clientX - this._mirrorRect.left)) + 'px'
@@ -274,8 +328,8 @@ class Drag extends EventEmitter{
     this._mirror.style.left = style.left + 'px';
     this._mirror.style.top = style.top + 'px';
     if(this.isInDragBox(event)) {
-      this._mirror.style.width = this.initBoxWidth;
-      this._mirror.style.height = this.initBoxHeight;
+      this._mirror.style.width = this.initBoxWidth + this.unit;
+      this._mirror.style.height = this.initBoxHeight + this.unit;
     }else {
       this._mirror.style.width = getRectWidth(this._mirrorRect) + 'px';
       this._mirror.style.height = getRectHeight(this._mirrorRect) + 'px';
@@ -321,6 +375,7 @@ class Drag extends EventEmitter{
     }
   }
 
+  // 移动内部的拖动盒子
   moveDragBox(event) {
     if(this.isInDragBox(event)){
       this.parentNode.style.transform = this.styleMake(event);
@@ -330,6 +385,7 @@ class Drag extends EventEmitter{
     }
   }
 
+  // 判断当前是否是放回盒子的
   isPutBackDragBox(back=true) {
     this.putBack = back
     const element = document.querySelector('#'+this.sourceMap.get(this.parentNode.id));
@@ -344,6 +400,7 @@ class Drag extends EventEmitter{
     }
   }
 
+  // 返回拖拽盒子
   putBackDragBox() {
     const element = document.querySelector('#'+this.sourceMap.get(this.parentNode.id));
     element.replaceWith(this.parentNode.childNodes[0])
@@ -351,6 +408,7 @@ class Drag extends EventEmitter{
     this.sourceMap.delete(this.parentNode.id);
   }
 
+  // 内部拖拽
   insideDrag(event) {
     this.dragging = true;
     this.parentNode = findParentNode(event.target, 'drag-box');
@@ -361,17 +419,96 @@ class Drag extends EventEmitter{
     this.parentNode.style.zIndex = this.zIndex;
   }
 
+  // 外部拖拽进内部
   outsideDragIntoInside(event) {
     this.draggingElement = findParentNode(event.target, this.dragTargetClassName);
     this.draggingRect = this.draggingElement.getBoundingClientRect();
-    this.xelementLength = this.xLength - parseFloat(this.initBoxWidth);
-    this.yelementLength = this.yLength - parseFloat(this.initBoxHeight);
+    this.xelementLength = this.xLength - this.initBoxWidth;
+    this.yelementLength = this.yLength - this.initBoxHeight;
     this.makeMirrorNode(this.draggingElement);
     this.dropdown = true;
   }
 
-  zoomInOut() {
+  // 记录放大缩小的值
+  zoomReady(event, direction) {
     this.zoom= true;
+    this.direction = direction;
+    this.parentNode = findParentNode(event.target, 'drag-box');
+    this.dragBoxInfo.dragBoxNowWidth = parseFloat(this.parentNode.style.width);
+    this.dragBoxInfo.dragBoxNowHeight = parseFloat(this.parentNode.style.height);
+    this.dragBoxInfo.dragBoxLeft = parseFloat(this.parentNode.style.transform.substr(10).split(',')[0])
+    this.dragBoxInfo.dragBoxTop = parseFloat(this.parentNode.style.transform.substr(10).split(',')[1])
+  }
+
+  // 放大缩小处理
+  zoomInOut(event) {
+    let xOffset, yOffset, nowWidth, nowHeight, result;
+    xOffset = event.clientX - this.mouseDownEvent.clientX;
+    yOffset = (xOffset) / this.ratio;
+    switch (this.direction){
+      case "br":
+        nowWidth = this.dragBoxInfo.dragBoxNowWidth + xOffset;
+        nowHeight = this.dragBoxInfo.dragBoxNowHeight + yOffset;
+        result = this.checkMaxAndMinWidth(nowWidth, nowHeight)
+        this.parentNode.style.width = result.width + 'px';
+        this.parentNode.style.height = result.height + 'px';
+        break;
+      case "tl":
+        nowWidth = this.dragBoxInfo.dragBoxNowWidth - xOffset;
+        nowHeight = this.dragBoxInfo.dragBoxNowHeight - yOffset;
+        result = this.checkMaxAndMinWidth(nowWidth, nowHeight);
+        this.parentNode.style.width =  result.width + 'px';
+        this.parentNode.style.height = result.height + 'px';
+        if(!result.lock){
+          this.parentNode.style.transform = `translate(${this.dragBoxInfo.dragBoxLeft + xOffset}px, ${this.dragBoxInfo.dragBoxTop + yOffset}px)`;
+        }
+        break;
+      case "tr":
+        nowWidth = this.dragBoxInfo.dragBoxNowWidth + xOffset;
+        nowHeight = this.dragBoxInfo.dragBoxNowHeight + yOffset;
+        result = this.checkMaxAndMinWidth(nowWidth, nowHeight);
+        this.parentNode.style.width =  result.width + 'px';
+        this.parentNode.style.height = result.height + 'px';
+        if(!result.lock){
+          this.parentNode.style.transform = `translate(${this.dragBoxInfo.dragBoxLeft}px, ${this.dragBoxInfo.dragBoxTop - yOffset}px)`;
+        }
+        break;
+      case "bl":
+        nowWidth = this.dragBoxInfo.dragBoxNowWidth - xOffset;
+        nowHeight = this.dragBoxInfo.dragBoxNowHeight - yOffset;
+        result = this.checkMaxAndMinWidth(nowWidth, nowHeight);
+        this.parentNode.style.width =  result.width + 'px';
+        this.parentNode.style.height = result.height + 'px';
+        if(!result.lock){
+          this.parentNode.style.transform = `translate(${this.dragBoxInfo.dragBoxLeft + xOffset}px, ${this.dragBoxInfo.dragBoxTop}px)`;
+        }
+        break;
+    }
+
+  }
+
+  // 检查放大缩小是否超过了阈值
+  checkMaxAndMinWidth(inwidth, inheight) {
+    let result = {
+      width: inwidth,
+      height: inheight,
+      lock: false,
+    }
+    if(inwidth > this.dragMaxWidth){
+      result.width = this.dragMaxWidth;
+      result.lock = true;
+    } else if(inwidth < this.dragMinWidth){
+      result.width = this.dragMinWidth;
+      result.lock = true;
+    }
+    if(inheight > this.dragMaxHeight) {
+      result.height = this.dragMaxHeight;
+      result.lock = true;
+    } else if(inheight < this.dragMinHeight) {
+      result.height = this.dragMinHeight;
+      result.lock = true;
+    }
+    return result;
   }
 
   // 处理鼠标点击事件
@@ -381,13 +518,13 @@ class Drag extends EventEmitter{
     event.preventDefault();
     this.putBack = false;
     this.dragging = false;
-    console.log(event, 'handleMouseDown');
+    this.zoom= false;
     this.mouseInfo.offsetX = event.offsetX;
     this.mouseInfo.offsetY = event.offsetY;
     // 在内部拖拽
     if (reduceSearchClass(event.target)) {
       if(Object.prototype.hasOwnProperty.call(event.target, 'direction')){
-        this.zoomInOut(event);
+        this.zoomReady(event, event.target.direction);
         return;
       }
       this.insideDrag(event)
@@ -397,19 +534,21 @@ class Drag extends EventEmitter{
         this.emit('dragFull')
         return;
       }
-      console.log('outside');
       this.outsideDragIntoInside(event);
     }
   }
 
   // 处理鼠标移动事件
   handleMouseMove(event) {
-    if (!this.dragging && !this.dropdown) return;
+    if (!this.dragging && !this.dropdown && !this.zoom) return;
     if (this.dropdown) {
       this.mirrorNodeMove(event);
     }
     if (this.dragging) {
-      this.moveDragBox(event)
+      this.moveDragBox(event);
+    }
+    if(this.zoom) {
+      this.zoomInOut(event);
     }
   }
 
@@ -426,8 +565,10 @@ class Drag extends EventEmitter{
     }
     this.dragging = false;
     this.dropdown = false;
+    this.zoom= false;
   }
 
+  // 生成拖拉盒子
   makeDragBox(event) {
     const inPlaceId = this.makePlaceholderImg();
     const parent = document.querySelector(this.dragBox);
@@ -438,10 +579,10 @@ class Drag extends EventEmitter{
       position: 'absolute',
       top: '0px',
       left: '0px',
-      width: this.initBoxWidth,
-      height: this.initBoxHeight,
+      width: this.initBoxWidth + this.unit,
+      height: this.initBoxHeight + this.unit,
       transform : this.styleMake(event),
-      zIndex: this.zIndex
+      'z-index': this.zIndex
     }
     setObjectStyle(element, elementStyle);
     const elementId = inPlaceId + '-drag';
@@ -451,6 +592,7 @@ class Drag extends EventEmitter{
     this.setMap(inPlaceId, elementId)
   }
 
+  // 生成拖拉点
   generateMovePoint(element) {
     const tl = document.createElement('div');
     setObjectStyle(tl, this.generateMovePointStyle('tl'));
@@ -471,7 +613,7 @@ class Drag extends EventEmitter{
   }
 
   /**
-   *
+   * 生成拖拉点样式
    * @param direction
    */
   generateMovePointStyle(direction) {

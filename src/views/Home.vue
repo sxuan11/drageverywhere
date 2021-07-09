@@ -35,9 +35,9 @@ export default {
           dragBox: '#move-box',
           dragTargetClassName: 'c-item',
           imgs: this.imgs,
-          initBoxHeight:'172px',
-          initBoxWidth:'300px',
           dragNumber: 4,
+          aspectRatio: '16:9',
+          dragMaxWidth: 600,
         }
     )
     this.drags.on('dragFull',()=>{
