@@ -14,7 +14,7 @@
 <script>
 import Item from "@/views/item";
 import imgs from '@/assets/place.png'
-import Drag from "./drag";
+import Drag from "../../core/dist/drag-everywhere.bundle";
 
 export default {
   name: 'Home',

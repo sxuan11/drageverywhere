@@ -1,18 +1,22 @@
 {
   "name": "drag",
-  "version": "0.1.0",
+  "version": "0.0.1",
+  "author": "sxuan",
+  "main": "./core/dist/drag-everywhere.bundle.js",
+  "description": "Drag to where you want to drag",
   "private": true,
   "scripts": {
     "serve": "vue-cli-service serve",
-    "build": "vue-cli-service build",
-    "lint": "vue-cli-service lint"
+    "dev": "webpack --config core/webpack.dev.config.js",
+    "build-core": "webpack --config core/webpack.config.js"
   },
   "dependencies": {
     "core-js": "^3.6.5",
     "events": "^3.3.0",
     "vue": "^2.6.11",
     "vue-router": "^3.2.0",
-    "vuex": "^3.4.0"
+    "vuex": "^3.4.0",
+    "webpack": "^5.44.0"
   },
   "devDependencies": {
     "@vue/cli-plugin-babel": "~4.5.0",
@@ -25,6 +29,7 @@
     "eslint-plugin-vue": "^6.2.2",
     "sass": "^1.26.5",
     "sass-loader": "^8.0.2",
-    "vue-template-compiler": "^2.6.11"
+    "vue-template-compiler": "^2.6.11",
+    "webpack-cli": "^4.7.2"
   }
 }

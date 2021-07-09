@@ -35,7 +35,7 @@ function reduceSearchClass(childNode) {
  * 递归查找父节点是否包含某个类名
  * @param element html节点
  * @param className 类名
- * @returns {*}
+ * @returns {HTMLElement}
  */
 function findParentNode(element, className) {
   if (element.className === className) {
@@ -66,7 +66,7 @@ function objectToString(object) {
  * 设定html元素样式
  * @param element
  * @param styleObject
- * @returns {*}
+ * @returns {HTMLElement}
  */
 function setObjectStyle(element, styleObject) {
   if (typeof styleObject !== 'object') {
@@ -182,7 +182,6 @@ class Drag extends EventEmitter{
     dragBoxLeft: 0,
     dragBoxTop: 0,
   }
-
   direction = '';
   /**
    * 构造函数
