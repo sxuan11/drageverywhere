@@ -108,8 +108,6 @@ function getRectWidth(rect) { return rect.width || (rect.right - rect.left); }
 function getRectHeight(rect) { return rect.height || (rect.bottom - rect.top); }
 
 class Drag extends EventEmitter{
-  // 储存的dom元素
-  domList=[];
   // 源盒子ID
   sourceBox = '';
   // 被拖入的盒子ID
@@ -183,11 +181,13 @@ class Drag extends EventEmitter{
     dragBoxTop: 0,
   }
   direction = '';
+  isListener = true;
   /**
    * 构造函数
    * @param sourceBox
    * @param dragBox
    * @param dragTargetClassName
+   * @param isListener
    * @param imgs
    * @param initBoxHeight
    * @param initBoxWidth
@@ -196,7 +196,7 @@ class Drag extends EventEmitter{
    * @param dragMinWidth
    * @param dragMaxWidth
    */
-  constructor({sourceBox, dragBox, dragTargetClassName, imgs, initBoxHeight ,initBoxWidth, dragNumber, aspectRatio='16:9' ,dragMinWidth , dragMaxWidth}) {
+  constructor({sourceBox, dragBox, dragTargetClassName, isListener, imgs, initBoxHeight ,initBoxWidth, dragNumber, aspectRatio='16:9' ,dragMinWidth , dragMaxWidth}) {
     super();
     this.sourceBox = sourceBox;
     this.dragBox = dragBox;
@@ -210,9 +210,17 @@ class Drag extends EventEmitter{
     this.dragNumber = dragNumber;
     this.searchOriginPoint();
     this.calculateLength();
-    this.startListener();
+    if(isListener !== undefined){
+      this.isListener = isListener
+    }
+    if(this.isListener) {
+      this.startListener();
+    }
   }
 
+  setZIndex(num) {
+    this.zIndex = num;
+  }
   // 搜索XY的原点坐标
   searchOriginPoint() {
     const result = document.querySelector(this.dragBox).getBoundingClientRect();
@@ -341,7 +349,7 @@ class Drag extends EventEmitter{
   }
 
   // 创建拖走后的img
-  makePlaceholderImg() {
+  makePlaceholderImg(draggingElement = this.draggingElement, drawId= '') {
     const inside = document.createElement('div');
     const img = document.createElement('img');
     const style = {
@@ -354,9 +362,9 @@ class Drag extends EventEmitter{
     img.src = this.imgs;
     inside.appendChild(img);
     const id ='id' + Date.now().toString();
-    inside.id = id;
+    inside.id = drawId ? drawId : id;
     try {
-      this.draggingElement.parentNode.replaceChild(inside, this.draggingElement);
+      draggingElement.parentNode.replaceChild(inside, draggingElement);
       return id;
     }catch (e){
       console.log(e)
@@ -384,6 +392,26 @@ class Drag extends EventEmitter{
     }
   }
 
+  reportMove() {
+    this.emit('drag-move', {
+      drawId: this.parentNode.id,
+      transform: this.parentNode.style.transform,
+      boxWidth: this.boxWidth,
+      boxHeight: this.boxHeight,
+    })
+  }
+
+  reportZoom() {
+    this.emit('drag-zoom',{
+      drawId: this.parentNode.id,
+      transform: this.parentNode.style.transform,
+      width: parseFloat(this.parentNode.style.width),
+      height: parseFloat(this.parentNode.style.height),
+      boxWidth: this.boxWidth,
+      boxHeight: this.boxHeight,
+    })
+  }
+
   // 判断当前是否是放回盒子的
   isPutBackDragBox(back=true) {
     this.putBack = back
@@ -404,6 +432,10 @@ class Drag extends EventEmitter{
     const element = document.querySelector('#'+this.sourceMap.get(this.parentNode.id));
     element.replaceWith(this.parentNode.childNodes[0])
     document.querySelector(this.dragBox).removeChild(this.parentNode);
+    this.emit('drag-in', {
+      imgId: this.sourceMap.get(this.parentNode.id),
+      drawId: this.parentNode.id,
+    });
     this.sourceMap.delete(this.parentNode.id);
   }
 
@@ -416,6 +448,10 @@ class Drag extends EventEmitter{
     this.yelementLength = this.yLength - this.draggingRect.height;
     this.zIndex += 1;
     this.parentNode.style.zIndex = this.zIndex;
+    this.emit('drag-index', {
+      drawId: this.parentNode.id,
+      'z-index': this.zIndex,
+    })
   }
 
   // 外部拖拽进内部
@@ -483,7 +519,6 @@ class Drag extends EventEmitter{
         }
         break;
     }
-
   }
 
   // 检查放大缩小是否超过了阈值
@@ -562,6 +597,12 @@ class Drag extends EventEmitter{
     if(this.putBack) {
       this.putBackDragBox();
     }
+    if (this.dragging && !this.putBack) {
+      this.reportMove();
+    }
+    if(this.zoom) {
+      this.reportZoom();
+    }
     this.dragging = false;
     this.dropdown = false;
     this.zoom= false;
@@ -588,7 +629,111 @@ class Drag extends EventEmitter{
     element.id = elementId
     this.generateMovePoint(element);
     parent.appendChild(element);
-    this.setMap(inPlaceId, elementId)
+    this.setMap(inPlaceId, elementId);
+    this.emit('drag-out',
+      {
+        id: this.draggingElement.id,
+        transform : elementStyle.transform,
+        'z-index': elementStyle["z-index"],
+        boxWidth: this.boxWidth,
+        boxHeight: this.boxHeight,
+        width: this.initBoxWidth,
+        height: this.initBoxHeight,
+        drawId: elementId,
+        inPlaceId,
+      })
+  }
+
+  /**
+   * 转换监听者的像素
+   * @param style
+   */
+  convertListenerPixel(style) {
+    let result = {}
+    if (style.transform) {
+      const dragBoxLeft = (parseFloat(style.transform.substr(10).split(',')[0]) / style.boxWidth) * this.boxWidth;
+      const dragBoxTop = (parseFloat(style.transform.substr(10).split(',')[1]) / style.boxHeight) * this.boxHeight;
+      result.transform = `translate(${dragBoxLeft}px, ${dragBoxTop}px)`;
+    }
+    if (style.width) {
+      result.width = (style.width / style.boxWidth) * this.boxWidth + 'px';
+    }
+    if (style.height) {
+      result.height = (style.height / style.boxHeight) * this.boxHeight + 'px';
+    }
+    return result;
+  }
+
+  // 监听者生成拖拉盒子
+  listenerDrawDragBox(data, isSender = false) {
+    const e = typeof data === 'object' ? data : JSON.parse(data);
+    const draggingElement = document.querySelector("#"+e.id)
+    this.makePlaceholderImg(draggingElement, data.inPlaceId);
+    const parent = document.querySelector(this.dragBox);
+    const element = document.createElement('div');
+    element.className = 'drag-box';
+    element.id = data.drawId;
+    element.appendChild(draggingElement);
+    const elementStyle = {
+      position: 'absolute',
+      top: '0px',
+      left: '0px',
+      'z-index': e['z-index'],
+      ...this.convertListenerPixel(
+        {
+          width: e.width,
+          height: e.height,
+          boxWidth: e.boxWidth,
+          boxHeight: e.boxHeight,
+          transform : e.transform,
+        })
+    }
+    setObjectStyle(element, elementStyle);
+    if(isSender) {
+      this.generateMovePoint(element);
+      this.setMap(data.inPlaceId, data.drawId);
+    }
+    parent.appendChild(element);
+  }
+
+  /**
+   * 监听者放回拖拉盒子
+   * @param data
+   * @param data.imgId 占位图ID
+   * @param data.drawId 真实元素ID
+   */
+  listenersPutBackBox(data) {
+    const element = document.querySelector('#' + data.imgId);
+    const sourceElement = document.querySelector('#' + data.drawId);
+    element.replaceWith(sourceElement.childNodes[0])
+    document.querySelector(this.dragBox).removeChild(sourceElement);
+  }
+
+  /**
+   * 监听者移动盒子
+   * @param data
+   */
+  listenersMoveBox(data) {
+    const element = document.querySelector('#' + data.drawId);
+    element.style.transition = 'transform .8s'
+    element.style.transform = this.convertListenerPixel(data).transform;
+  }
+
+  /**
+   * 监听者盒子改变大小
+   * @param data
+   */
+  listenersZoomBox(data) {
+    const element = document.querySelector('#' + data.drawId);
+    element.style.transition = 'transform .8s, width .8s, height .8s'
+    element.style.transform = this.convertListenerPixel(data).transform;
+    element.style.width = this.convertListenerPixel(data).width;
+    element.style.height = this.convertListenerPixel(data).height;
+  }
+
+  listenersIndexBox(data) {
+    const element = document.querySelector('#' + data.drawId);
+    element.style.zIndex = data['z-index'];
   }
 
   // 生成拖拉点

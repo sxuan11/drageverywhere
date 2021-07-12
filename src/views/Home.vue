@@ -1,8 +1,8 @@
 <template>
   <div class="home">
     <div class="home-box" id="home-box">
-      <div v-for="(index) of 6" :id="`item${index}`" :key="index" style="display: inline-block;" class="home-box-item">
-        <Item :text="index"/>
+      <div v-for="(index) of 6" :key="index" style="display: inline-block;" class="home-box-item">
+        <Item :id="`item${index}`" :text="index"/>
       </div>
     </div>
     <div class="move-box" id="move-box">
@@ -15,6 +15,9 @@
 import Item from "@/views/item";
 import imgs from '@/assets/place.png'
 import Drag from "../../core/dist/drag-everywhere.bundle";
+import io from "socket.io-client";
+
+const socket= io('http://127.0.0.1:3030/');
 
 export default {
   name: 'Home',
@@ -23,6 +26,7 @@ export default {
       dragged: '',
       imgs,
       drags: '',
+      socket,
     }
   },
   components: {
@@ -42,9 +46,35 @@ export default {
     )
     this.drags.on('dragFull',()=>{
       console.log('dragFull');
+    });
+    this.drags.on('drag-out', (data)=>{
+      socket.emit('drag-out', data);
+    })
+    this.drags.on('drag-in', (data)=>{
+      socket.emit('drag-in', data);
+    })
+    this.drags.on('drag-move', (data)=>{
+      socket.emit('drag-move', data);
+    })
+    this.drags.on('drag-zoom', (data)=>{
+      socket.emit('drag-zoom', data);
+    })
+    this.drags.on('drag-index', (data)=>{
+      socket.emit('drag-index', data);
     })
     this.drags.on('changeWidthAndHeight', (result)=>{
       console.log('changeWidthAndHeight', result);
+    })
+    socket.emit('init-position');
+    socket.on('position', data=>{
+      let max = 0;
+      for (let i = 0; i<data.length; i++) {
+        if (data[i]['z-index']> max){
+          max = data[i]['z-index']
+        }
+        this.drags.listenerDrawDragBox(data[i], true);
+      }
+      this.drags.setZIndex(max);
     })
   }
 }
