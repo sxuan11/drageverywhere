@@ -64,15 +64,16 @@ export default {
     })
     this.drags.on('changeWidthAndHeight', (result)=>{
       console.log('changeWidthAndHeight', result);
+      socket.emit('change-width', result);
     })
     socket.emit('init-position');
     socket.on('position', data=>{
       let max = 0;
-      for (let i = 0; i<data.length; i++) {
-        if (data[i]['z-index']> max){
-          max = data[i]['z-index']
+      for (let i = 0; i<data.position.length; i++) {
+        if (data.position[i]['z-index']> max){
+          max = data.position[i]['z-index']
         }
-        this.drags.listenerDrawDragBox(data[i], true);
+        this.drags.sourceDrawDragBox(data.position[i]);
       }
       this.drags.setZIndex(max);
     })

@@ -41,7 +41,7 @@ export default {
           dragNumber: 4,
           aspectRatio: '16:9',
           dragMaxWidth: 600,
-          isListener: false,
+          notListener: false,
         })
     this.drags.on('dragFull',()=>{
       console.log('dragFull');
@@ -66,9 +66,14 @@ export default {
     })
     socket.emit('init-position');
     socket.on('position', data=>{
-      for (let i = 0; i<data.length; i++) {
-        this.drags.listenerDrawDragBox(data[i]);
+      this.drags.setSourceData(data)
+      for (let i = 0; i<data.position.length; i++) {
+        this.drags.listenerDrawDragBox(data.position[i]);
       }
+    })
+    socket.on('change-width', data=>{
+      console.log(data, 'data');
+      this.drags.setSourceData(data, true)
     })
   }
 }
