@@ -1,116 +1,6 @@
 import EventEmitter from 'events';
-
-/**
- * 判断这个元素是否是HTML节点
- * @param obj
- * @returns {boolean}
- */
-function isHTMLElement(obj) {
-  const e = document.createElement("div");
-  try {
-    e.appendChild(obj.cloneNode(true));
-    return obj.nodeType === 1;
-  } catch {
-    return false;
-  }
-}
-
-/**
- * 搜索是否是拖动盒子的子节点
- * @param childNode html节点
- * @returns {boolean}
- */
-function reduceSearchClass(childNode) {
-  const parentNode = document.querySelectorAll('.drag-box');
-  if (!parentNode.length) return false;
-  for (let i = 0; i < parentNode.length; i++) {
-    if (parentNode[i].contains(childNode)) {
-      return true;
-    }
-  }
-  return false;
-}
-
-/**
- * 递归查找父节点包含某个类名的节点
- * @param element html节点
- * @param className 类名
- * @returns {HTMLElement}
- */
-function findParentNode(element, className) {
-  if (element.className === className) {
-    return element;
-  } else if (element && element.parentNode) {
-    return findParentNode(element.parentNode, className);
-  }
-}
-
-/**
- * 对象转字符串
- * @param object
- * @returns {string}
- */
-// eslint-disable-next-line no-unused-vars
-function objectToString(object) {
-  if (typeof object !== 'object') {
-    throw new Error(`${object} must be an object`);
-  }
-  let str = '';
-  for (const [k, v] of Object.entries(object)) {
-    str += `${k}: ${v};`;
-  }
-  return str;
-}
-
-/**
- * 设定html元素样式
- * @param element
- * @param styleObject
- * @returns {HTMLElement}
- */
-function setObjectStyle(element, styleObject) {
-  if (typeof styleObject !== 'object') {
-    throw new Error(`${styleObject} must be an object`);
-  }
-  if (!isHTMLElement(element)) {
-    throw new Error(`${element} must be a HTMLElement`);
-  }
-  for (const [propertyName, value] of Object.entries(styleObject)) {
-    element.style.setProperty(propertyName, value);
-  }
-  return element;
-}
-
-/**
- * 节流函数
- * @param fun
- * @param delay
- * @returns {(function(): void)|*}
- */
-function throttle(fun, delay) {
-  let timer = null;
-  let startTime = Date.now();
-  return function () {
-    const currentTime = Date.now();
-    const remaining = delay - (currentTime - startTime);
-    const args = arguments;
-    clearTimeout(timer);
-    if (remaining <= 0) {
-      fun.apply(this, args);
-      startTime = Date.now();
-    } else {
-      timer = setTimeout(fun, remaining);
-    }
-  };
-}
-
-function getRectWidth(rect) {
-  return rect.width || (rect.right - rect.left);
-}
-
-function getRectHeight(rect) {
-  return rect.height || (rect.bottom - rect.top);
-}
+import { deepCopy } from './utils/deepCopy'
+import { isHTMLElement, hasKey, setObjectStyle, findParentNode ,getRectHeight ,reduceSearchClass ,getRectWidth ,throttle} from './utils'
 
 class Drag extends EventEmitter {
   // 源盒子ID
@@ -169,6 +59,8 @@ class Drag extends EventEmitter {
   mouseDownEvent = '';
   // 拖拽区和源区域的映射关系
   sourceMap = new Map();
+  dragSourceMap = new Map();
+  listenerStyleMap = new Map();
   initBoxWidth = 300;
   initBoxHeight = '';
   dragMaxWidth = 600;
@@ -188,9 +80,9 @@ class Drag extends EventEmitter {
   // 单位
   unit = 'px';
   // 盒子宽度
-  boxWidth = 0;
+  parentWidth = 0;
   // 盒子高度
-  boxHeight = 0;
+  parentHeight = 0;
   // 拖拉盒子信息
   dragBoxInfo = {
     dragBoxNowWidth: 0,
@@ -270,13 +162,13 @@ class Drag extends EventEmitter {
     const result = document.querySelector(this.dragBox).getBoundingClientRect();
     this.pointX = result.x;
     this.pointY = result.y;
-    const {height, width} = document.body.getBoundingClientRect();
-    this.boxWidth = width;
-    this.boxHeight = height;
+    const { height, width } = document.body.getBoundingClientRect();
+    this.parentWidth = parseFloat(width.toFixed(2));
+    this.parentHeight = parseFloat(height.toFixed(2));
     this.calculateXYlength(result);
     if (emit) {
       this.isBeyondBoundary();
-      this.changeWidthAndHeight({height, width});
+      this.changeWidthAndHeight({height: this.parentHeight, width:  this.parentWidth});
     }
   }
 
@@ -313,7 +205,7 @@ class Drag extends EventEmitter {
 
   // 窗口宽高发生改变上传事件
   changeWidthAndHeight({height, width}) {
-    this.emit('changeWidthAndHeight', {height, width})
+    this.emit('changeWidthAndHeight', {parentHeight: height, parentWidth: width})
   }
 
   // 设定源信息
@@ -324,6 +216,7 @@ class Drag extends EventEmitter {
     this.calculateListenerOriginPoint(recalculate)
   }
 
+  // 缩放窗口的时候超出边界
   isBeyondBoundary() {
     const eleList = document.querySelectorAll('.drag-box');
     let xTran, width, yTran, height, xAll, yAll, xDiff = 0, yDiff = 0;
@@ -344,8 +237,12 @@ class Drag extends EventEmitter {
       if (xDiff > 0 || yDiff > 0) {
         this.reportMove(
           {
-            drawId: eleList[i].id,
-            transform: eleList[i].style.transform
+            id: this.dragSourceMap.get(eleList[i].id).id,
+            left: parseFloat(eleList[i].style.transform.substr(10).split(',')[0]),
+            top: parseFloat(eleList[i].style.transform.substr(10).split(',')[1]),
+            index: eleList[i].style["z-index"],
+            width: eleList[i].style.width,
+            height: eleList[i].style.height,
           })
       }
       xDiff = 0;
@@ -478,18 +375,13 @@ class Drag extends EventEmitter {
     img.src = this.imgs;
     inside.appendChild(img);
     const id = 'id' + Date.now().toString();
-    inside.id = drawId ? drawId : id;
+    inside.id = drawId ? drawId + '-img' : id;
     try {
       draggingElement.parentNode.replaceChild(inside, draggingElement);
-      return id;
+      return inside.id;
     } catch (e) {
       console.log(e)
     }
-  }
-
-  // 设立映射关系
-  setMap(imgId, dragId) {
-    this.sourceMap.set(dragId, imgId)
   }
 
   // 是否在目标拖动的盒子中
@@ -512,8 +404,8 @@ class Drag extends EventEmitter {
   // 上传移动事件
   reportMove(info) {
     let obj = {
-      boxWidth: this.boxWidth,
-      boxHeight: this.boxHeight,
+      parentWidth: this.parentWidth,
+      parentHeight: this.parentHeight,
     }
     if (Object.keys(info).length) {
       obj = {
@@ -523,9 +415,15 @@ class Drag extends EventEmitter {
     } else {
       obj = {
         ...obj,
-        drawId: this.parentNode.id,
-        transform: this.parentNode.style.transform,
+        id: this.dragSourceMap.get(this.parentNode.id).id,
+        left: parseFloat(this.parentNode.style.transform.substr(10).split(',')[0]),
+        top: parseFloat(this.parentNode.style.transform.substr(10).split(',')[1]),
+        index: this.parentNode.style["z-index"],
+        width: this.parentNode.style.width,
+        height: this.parentNode.style.height,
       }
+      obj.width = parseFloat(obj.width);
+      obj.height = parseFloat(obj.height);
     }
     this.emit('drag-move', obj)
   }
@@ -533,8 +431,8 @@ class Drag extends EventEmitter {
   // 上传缩放事件
   reportZoom(info) {
     let obj = {
-      boxWidth: this.boxWidth,
-      boxHeight: this.boxHeight,
+      parentWidth: this.parentWidth,
+      parentHeight: this.parentHeight,
     }
     if (Object.keys(info).length) {
       obj = {
@@ -544,20 +442,23 @@ class Drag extends EventEmitter {
     } else {
       obj = {
         ...obj,
-        drawId: this.parentNode.id,
-        transform: this.parentNode.style.transform,
-        width: parseFloat(this.parentNode.style.width),
-        height: parseFloat(this.parentNode.style.height),
+        id: this.dragSourceMap.get(this.parentNode.id).id,
+        left: parseFloat(this.parentNode.style.transform.substr(10).split(',')[0]),
+        top: parseFloat(this.parentNode.style.transform.substr(10).split(',')[1]),
+        index: this.parentNode.style["z-index"],
+        width: this.parentNode.style.width,
+        height: this.parentNode.style.height,
       }
     }
-
+    obj.width = parseFloat(obj.width);
+    obj.height = parseFloat(obj.height);
     this.emit('drag-zoom', obj)
   }
 
   // 判断当前是否是放回盒子的
   isPutBackDragBox(back = true) {
     this.putBack = back
-    const element = document.querySelector('#' + this.sourceMap.get(this.parentNode.id));
+    const element = document.querySelector('#' + this.dragSourceMap.get(this.parentNode.id).imgId);
     if (back) {
       this.parentNode.style.opacity = '0';
       element.style.backgroundColor = '#78A7ED';
@@ -571,14 +472,15 @@ class Drag extends EventEmitter {
 
   // 返回拖拽盒子
   putBackDragBox() {
-    const element = document.querySelector('#' + this.sourceMap.get(this.parentNode.id));
+    const element = document.querySelector('#' + this.dragSourceMap.get(this.parentNode.id).imgId);
     element.replaceWith(this.parentNode.childNodes[0])
     document.querySelector(this.dragBox).removeChild(this.parentNode);
+    const id = this.dragSourceMap.get(this.parentNode.id).id;
     this.emit('drag-in', {
-      imgId: this.sourceMap.get(this.parentNode.id),
-      drawId: this.parentNode.id,
+      id
     });
-    this.sourceMap.delete(this.parentNode.id);
+    this.sourceMap.delete(id);
+    this.dragSourceMap.delete(this.parentNode.id);
   }
 
   // 内部拖拽
@@ -589,11 +491,7 @@ class Drag extends EventEmitter {
     this.xelementLength = this.realXLength - this.draggingRect.width;
     this.yelementLength = this.realYLength - this.draggingRect.height;
     this.zIndex += 1;
-    this.parentNode.style.zIndex = this.zIndex;
-    this.emit('drag-index', {
-      drawId: this.parentNode.id,
-      'z-index': this.zIndex,
-    })
+    this.parentNode.style.zIndex = this.zIndex.toString();
   }
 
   // 外部拖拽进内部
@@ -699,7 +597,7 @@ class Drag extends EventEmitter {
     this.mouseInfo.offsetY = event.offsetY;
     // 在内部拖拽
     if (reduceSearchClass(event.target)) {
-      if (Object.prototype.hasOwnProperty.call(event.target, 'direction')) {
+      if (hasKey(event.target, 'direction')) {
         this.zoomReady(event, event.target.direction);
         return;
       }
@@ -752,7 +650,7 @@ class Drag extends EventEmitter {
 
   // 生成拖拉盒子
   makeDragBox(event) {
-    const inPlaceId = this.makePlaceholderImg();
+    const inPlaceId = this.makePlaceholderImg(this.draggingElement, this.draggingElement.id);
     const parent = document.querySelector(this.dragBox);
     const element = document.createElement('div');
     element.className = 'drag-box';
@@ -767,22 +665,30 @@ class Drag extends EventEmitter {
       'z-index': this.zIndex
     }
     setObjectStyle(element, elementStyle);
-    const elementId = inPlaceId + '-drag';
-    element.id = elementId
+    const elementId = this.draggingElement.id + '-drag';
+    element.id = elementId;
     this.generateMovePoint(element);
     parent.appendChild(element);
-    this.setMap(inPlaceId, elementId);
+    const sourceInfo = {
+      drawId: elementId,
+      imgId: inPlaceId,
+    }
+    const dragInfo = {
+      id: this.draggingElement.id,
+      imgId: inPlaceId,
+    }
+    this.sourceMap.set(this.draggingElement.id, sourceInfo);
+    this.dragSourceMap.set(elementId, dragInfo)
     this.emit('drag-out',
       {
         id: this.draggingElement.id,
-        transform: elementStyle.transform,
+        left: parseFloat(elementStyle.transform.substr(10).split(',')[0]),
+        top: parseFloat(elementStyle.transform.substr(10).split(',')[1]),
         'z-index': elementStyle["z-index"],
-        boxWidth: this.boxWidth,
-        boxHeight: this.boxHeight,
+        parentWidth: this.parentWidth,
+        parentHeight: this.parentHeight,
         width: this.initBoxWidth,
         height: this.initBoxHeight,
-        drawId: elementId,
-        inPlaceId,
       })
   }
 
@@ -794,12 +700,12 @@ class Drag extends EventEmitter {
   convertPixel(style) {
     let result = {}
     if (style.transform) {
-      const dragBoxLeft = (parseFloat(style.transform.substr(10).split(',')[0]) / style.boxWidth) * this.boxWidth;
-      const dragBoxTop = (parseFloat(style.transform.substr(10).split(',')[1]) / style.boxHeight) * this.boxHeight;
+      const dragBoxLeft = (parseFloat(style.transform.substr(10).split(',')[0]) / style.parentWidth) * this.parentWidth;
+      const dragBoxTop = (parseFloat(style.transform.substr(10).split(',')[1]) / style.parentHeight) * this.parentHeight;
       result.transform = `translate(${dragBoxLeft}px, ${dragBoxTop}px)`;
     }
     if (style.width && style.height) {
-      let width = (style.width / style.boxWidth) * this.boxWidth
+      let width = (style.width / style.parentWidth) * this.parentWidth
       if (width > this.dragMaxWidth) {
         width = this.dragMaxWidth;
       }
@@ -820,37 +726,47 @@ class Drag extends EventEmitter {
    * @param data.id 被拖出的元素ID
    * @param data.width 源的拖动盒子宽度
    * @param data.height 源的拖动盒子高度
-   * @param data.boxWidth 源的盒子宽度
-   * @param data.boxHeight 源的盒子高度
+   * @param data.parentWidth 源的盒子宽度
+   * @param data.parentHeight 源的盒子高度
    * @param data.transform 源的拖动盒子的坐标
    * @param data.z-index 源的拖动盒子的层级
    */
   sourceDrawDragBox(data) {
     const e = typeof data === 'object' ? data : JSON.parse(data);
     const draggingElement = document.querySelector("#" + e.id)
-    this.makePlaceholderImg(draggingElement, e.inPlaceId);
+    const imgId = this.makePlaceholderImg(draggingElement, e.id);
     const parent = document.querySelector(this.dragBox);
     const element = document.createElement('div');
     element.className = 'drag-box';
-    element.id = e.drawId;
+    const elementId = e.id + '-drag';
+    element.id = elementId;
     element.appendChild(draggingElement);
     const elementStyle = {
       position: 'absolute',
       top: '0px',
       left: '0px',
-      'z-index': e['z-index'],
+      'z-index': e['index'],
       ...this.convertPixel(
         {
           width: e.width,
           height: e.height,
-          boxWidth: e.boxWidth,
-          boxHeight: e.boxHeight,
-          transform: e.transform,
+          parentWidth: e.parentWidth,
+          parentHeight: e.parentHeight,
+          transform: `translate(${e.left}px, ${e.top}px)`,
         })
     }
     setObjectStyle(element, elementStyle);
     this.generateMovePoint(element);
-    this.setMap(e.inPlaceId, e.drawId);
+    const sourceInfo = {
+      drawId: elementId,
+      imgId,
+    }
+    const dragInfo = {
+      id: e.id,
+      imgId,
+    }
+    this.sourceMap.set(this.draggingElement.id, sourceInfo);
+    this.dragSourceMap.set(elementId, dragInfo)
     parent.appendChild(element);
   }
 
@@ -922,31 +838,41 @@ class Drag extends EventEmitter {
    * @returns {{}}
    */
   convertListenerPixel(style) {
+    if(style === null || style === undefined || !Object.keys(style).length) return {};
     let result = {}
-    const dragBoxLeft = parseFloat(style.transform.substr(10).split(',')[0]);
-    const dragBoxTop = parseFloat(style.transform.substr(10).split(',')[1]);
-    const dragBoxLeftRatio = dragBoxLeft === 0 ? 0 : dragBoxLeft / style.boxWidth;
-    const dragBoxTopRatio = dragBoxTop === 0 ? 0 : dragBoxTop / style.boxHeight;
+    let dragBoxLeft, dragBoxTop;
+    if(style.transform) {
+      dragBoxLeft = parseFloat(style.transform.substr(10).split(',')[0]);
+      dragBoxTop = parseFloat(style.transform.substr(10).split(',')[1]);
+    } else {
+      dragBoxLeft = style.left;
+      dragBoxTop = style.top;
+    }
+    const dragBoxLeftRatio = dragBoxLeft === 0 ? 0 : dragBoxLeft / style.parentWidth;
+    const dragBoxTopRatio = dragBoxTop === 0 ? 0 : dragBoxTop / style.parentHeight;
     const left = dragBoxLeftRatio * this.xLength;
     const top = dragBoxTopRatio * this.yLength;
     if (this.useWidth) {
-      if (style.transform) {
+      if (style.transform || hasKey(style, 'top') || hasKey(style, 'left')) {
         result.transform = `translate(${left}px, ${top + (this.newPointY)}px)`;
       }
       if (style.width && style.height) {
-        const width = (style.width / style.boxWidth) * this.xLength
+        const width = (style.width / style.parentWidth) * this.xLength
         result.width = width + 'px';
         result.height = width / this.ratio + 'px';
       }
     } else {
-      if (style.transform) {
+      if (style.transform || hasKey(style, 'top') || hasKey(style, 'left')) {
         result.transform = `translate(${left + (this.newPointX)}px, ${top}px)`;
       }
       if (style.width && style.height) {
-        const height = (style.height / style.boxHeight) * this.yLength
+        const height = (style.height / style.parentHeight) * this.yLength
         result.width = height * this.ratio + 'px';
         result.height = height + 'px';
       }
+    }
+    if(style.index) {
+      result['z-index'] = style.index;
     }
     return result;
   }
@@ -957,7 +883,7 @@ class Drag extends EventEmitter {
   recalculatePixel() {
     const eleList = document.querySelectorAll('.drag-box');
     for (let i = 0; i < eleList.length; i++) {
-      setObjectStyle(eleList[i], this.convertListenerPixel(this.sourceMap.get(eleList[i].id)));
+      setObjectStyle(eleList[i], this.convertListenerPixel(this.listenerStyleMap.get(eleList[i].id)));
     }
   }
 
@@ -969,38 +895,52 @@ class Drag extends EventEmitter {
    * @param data.id 被拖出的元素ID
    * @param data.width 源的拖动盒子宽度
    * @param data.height 源的拖动盒子高度
-   * @param data.boxWidth 源的盒子宽度
-   * @param data.boxHeight 源的盒子高度
+   * @param data.parentWidth 源的盒子宽度
+   * @param data.parentHeight 源的盒子高度
    * @param data.transform 源的拖动盒子的坐标
    * @param data.z-index 源的拖动盒子的层级
    */
   listenerDrawDragBox(data) {
     const e = typeof data === 'object' ? data : JSON.parse(data);
     const draggingElement = document.querySelector("#" + e.id)
-    this.makePlaceholderImg(draggingElement, e.inPlaceId);
+    const imgId = this.makePlaceholderImg(draggingElement, e.id);
     const parent = document.querySelector(this.dragBox);
     const element = document.createElement('div');
     element.className = 'drag-box';
-    element.id = e.drawId;
+    element.id = `${e.id}-drag`;
     element.appendChild(draggingElement);
     const obj = {
       width: e.width,
       height: e.height,
-      boxWidth: e.boxWidth,
-      boxHeight: e.boxHeight,
-      transform: e.transform,
+      parentWidth: e.parentWidth,
+      parentHeight: e.parentHeight,
+      left: e.left,
+      top: e.top,
     }
     const elementStyle = {
       position: 'absolute',
       top: '0px',
       left: '0px',
-      'z-index': e['z-index'],
+      'z-index': e['index'],
       ...this.convertListenerPixel(obj)
     }
     setObjectStyle(element, elementStyle);
     element.style.transition = 'transform .8s, width .8s, height .8s';
-    this.sourceMap.set(element.id, obj);
+    const sourceInfo = {
+      drawId: element.id,
+      imgId
+    }
+    this.sourceMap.set(e.id, sourceInfo);
+    this.listenerStyleMap.set(element.id, obj);
     parent.appendChild(element);
+  }
+
+  listenersUpdateBox(data) {
+    const info = deepCopy(data);
+    const drawId = this.sourceMap.get(info.id).drawId;
+    const element = document.querySelector('#' + drawId);
+    Object.assign(this.listenerStyleMap.get(drawId), info);
+    setObjectStyle(element, this.convertListenerPixel(info));
   }
 
   /**
@@ -1010,9 +950,11 @@ class Drag extends EventEmitter {
    * @param data.drawId 真实拖拽元素ID
    */
   listenersPutBackBox(data) {
-    const element = document.querySelector('#' + data.imgId);
-    const sourceElement = document.querySelector('#' + data.drawId);
-    this.sourceMap.delete(data.drawId);
+    const { drawId, imgId } = this.sourceMap.get(data)
+    const element = document.querySelector('#' + imgId);
+    const sourceElement = document.querySelector('#' + drawId);
+    this.sourceMap.delete(data);
+    this.listenerStyleMap.delete(drawId)
     element.replaceWith(sourceElement.childNodes[0])
     document.querySelector(this.dragBox).removeChild(sourceElement);
   }
@@ -1025,11 +967,11 @@ class Drag extends EventEmitter {
    * @param data.transform 最新的拖拽盒子的坐标
    */
   listenersMoveBox(data) {
-    const info = JSON.parse(JSON.stringify(data));
-    delete (info.drawId)
-    const element = document.querySelector('#' + data.drawId);
-    Object.assign(this.sourceMap.get(data.drawId), info);
-    element.style.transform = this.convertListenerPixel(data).transform;
+    const info = deepCopy(data);
+    const drawId = this.sourceMap.get(info.id).drawId;
+    const element = document.querySelector('#' + drawId);
+    Object.assign(this.listenerStyleMap.get(drawId), info);
+    element.style.transform = this.convertListenerPixel(info).transform;
   }
 
   /**
@@ -1042,14 +984,11 @@ class Drag extends EventEmitter {
    * @param data.height 最新的拖拽盒子的高度
    */
   listenersZoomBox(data) {
-    const info = JSON.parse(JSON.stringify(data));
-    delete (info.drawId);
-    const element = document.querySelector('#' + data.drawId);
-    Object.assign(this.sourceMap.get(data.drawId), info);
-    setObjectStyle(element, this.convertListenerPixel(data));
-    // element.style.transform = this.convertListenerPixel(data).transform;
-    // element.style.width = this.convertListenerPixel(data).width;
-    // element.style.height = this.convertListenerPixel(data).height;
+    const info = deepCopy(data);
+    const drawId = this.sourceMap.get(info.id).drawId;
+    const element = document.querySelector('#' + drawId);
+    Object.assign(this.listenerStyleMap.get(drawId), info);
+    setObjectStyle(element, this.convertListenerPixel(info));
   }
 
   /**
@@ -1058,8 +997,10 @@ class Drag extends EventEmitter {
    * @param data.drawId 真实拖拽元素ID
    */
   listenersIndexBox(data) {
-    const element = document.querySelector('#' + data.drawId);
-    element.style.zIndex = data['z-index'];
+    const info = deepCopy(data);
+    const drawId = this.sourceMap.get(info.id).drawId;
+    const element = document.querySelector('#' + drawId);
+    element.style.zIndex = info['index'];
   }
 }
 

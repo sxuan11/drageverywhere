@@ -26,6 +26,11 @@ export default {
       dragged: '',
       imgs,
       drags: '',
+      dragMap: new Map(),
+      dragInfo: {
+        height: 0,
+        width: 0,
+      }
     }
   },
   components: {
@@ -46,35 +51,53 @@ export default {
     this.drags.on('dragFull',()=>{
       console.log('dragFull');
     })
-    this.drags.on('changeWidthAndHeight', (result)=>{
-      console.log('changeWidthAndHeight', result);
-    })
-    socket.on('drag-out', (data)=>{
-      this.drags.listenerDrawDragBox(data);
-    })
+    // this.drags.on('changeWidthAndHeight', (result)=>{
+    //   console.log('changeWidthAndHeight', result);
+    // })
     socket.on('drag-in', (data)=>{
       this.drags.listenersPutBackBox(data);
+      this.dragMap.delete(data);
     })
-    socket.on('drag-move', (data)=>{
-      this.drags.listenersMoveBox(data);
-    })
-    socket.on('drag-zoom', (data)=>{
-      this.drags.listenersZoomBox(data);
-    })
-    socket.on('drag-index', (data)=>{
-      this.drags.listenersIndexBox(data);
-    })
+    socket.on('drag-out', this.checkDrag.bind(this))
+    socket.on('drag-move', this.checkDrag.bind(this))
+    socket.on('drag-zoom', this.checkDrag.bind(this))
     socket.emit('init-position');
     socket.on('position', data=>{
       this.drags.setSourceData(data)
-      for (let i = 0; i<data.position.length; i++) {
-        this.drags.listenerDrawDragBox(data.position[i]);
+      for (const i in data) {
+        this.checkDrag(data[i])
       }
     })
-    socket.on('change-width', data=>{
-      console.log(data, 'data');
-      this.drags.setSourceData(data, true)
-    })
+    // socket.on('change-width', data=>{
+    //   console.log(data, 'data');
+    //   // this.drags.setSourceData(data, true)
+    // })
+  },
+  methods: {
+    checkDrag(data) {
+      const { id, parentWidth, parentHeight } = data;
+      if(this.dragMap.size === 0) {
+        this.drags.setSourceData({width: parentWidth, height: parentHeight});
+        this.dragInfo.height = parentHeight;
+        this.dragInfo.width = parentWidth;
+        this.drags.listenerDrawDragBox(data);
+        this.dragMap.set(id, data);
+      } else {
+        if(this.dragMap.has(id)) {
+          this.drags.setSourceData({width: parentWidth, height: parentHeight}, true);
+          this.drags.listenersUpdateBox(data);
+          this.dragMap.set(id, data);
+        } else {
+          if(this.dragInfo.height !== parentHeight || this.dragInfo.width !== parentWidth){
+            this.drags.setSourceData({width: parentWidth, height: parentHeight}, true);
+            this.dragInfo.height = parentHeight;
+            this.dragInfo.width = parentWidth;
+          }
+          this.drags.listenerDrawDragBox(data);
+          this.dragMap.set(id, data)
+        }
+      }
+    }
   }
 }
 </script>
@@ -92,7 +115,7 @@ export default {
   .move-box {
     flex: 1;
     position: relative;
-    background-color: rgb(255, 180, 180);
+    background-color: rgb(255, 173, 173);
     overflow: hidden;
   }
 

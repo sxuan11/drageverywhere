@@ -17,7 +17,7 @@ import imgs from '@/assets/place.png'
 import Drag from "../../core/dist/drag-everywhere.bundle";
 import io from "socket.io-client";
 
-const socket= io('http://127.0.0.1:3030/');
+const socket = io('http://127.0.0.1:3030/');
 
 export default {
   name: 'Home',
@@ -27,6 +27,7 @@ export default {
       imgs,
       drags: '',
       socket,
+      dragMap: new Map(),
     }
   },
   components: {
@@ -44,36 +45,46 @@ export default {
           dragMaxWidth: 600,
         }
     )
-    this.drags.on('dragFull',()=>{
+    this.drags.on('dragFull', () => {
       console.log('dragFull');
     });
-    this.drags.on('drag-out', (data)=>{
+    this.drags.on('drag-out', ({height, id, left, width, parentHeight, parentWidth, top, 'z-index': index}) => {
+      const data = {width, height, id, left, parentHeight, parentWidth, top, index}
+      this.dragMap.set(id, data)
       socket.emit('drag-out', data);
     })
-    this.drags.on('drag-in', (data)=>{
+    this.drags.on('drag-in', (data) => {
+      this.dragMap.delete(data);
       socket.emit('drag-in', data);
     })
-    this.drags.on('drag-move', (data)=>{
-      socket.emit('drag-move', data);
+    this.drags.on('drag-move', ({height, id, left, width, parentHeight, parentWidth, top, 'z-index': index}) => {
+      const data = {width, height, id, left, parentHeight, parentWidth, top, index}
+      this.dragMap.set(id, data)
+      socket.emit('drag-out', data);
     })
-    this.drags.on('drag-zoom', (data)=>{
-      socket.emit('drag-zoom', data);
+    this.drags.on('drag-zoom', ({height, id, left, width, parentHeight, parentWidth, top, 'z-index': index}) => {
+      const data = {width, height, id, left, parentHeight, parentWidth, top, index}
+      this.dragMap.set(id, data)
+      socket.emit('drag-out', data);
     })
-    this.drags.on('drag-index', (data)=>{
-      socket.emit('drag-index', data);
-    })
-    this.drags.on('changeWidthAndHeight', (result)=>{
-      console.log('changeWidthAndHeight', result);
-      socket.emit('change-width', result);
+    this.drags.on('changeWidthAndHeight', (result) => {
+      for (const v of this.dragMap.values()) {
+        v.parentHeight = result.parentHeight;
+        v.parentWidth = result.parentWidth;
+        this.dragMap.set(v.id, v);
+        socket.emit('drag-out', v);
+      }
+
     })
     socket.emit('init-position');
-    socket.on('position', data=>{
+    socket.on('position', data => {
       let max = 0;
-      for (let i = 0; i<data.position.length; i++) {
-        if (data.position[i]['z-index']> max){
-          max = data.position[i]['z-index']
+      for (const i in data) {
+        if (data[i]['index'] > max) {
+          max = data[i]['index']
         }
-        this.drags.sourceDrawDragBox(data.position[i]);
+        this.dragMap.set(data[i].id, data[i])
+        this.drags.sourceDrawDragBox(data[i]);
       }
       this.drags.setZIndex(max);
     })
@@ -94,7 +105,7 @@ export default {
   .move-box {
     flex: 1;
     position: relative;
-    background-color: rgb(255, 180, 180);
+    background-color: rgb(99, 99, 99);
     overflow: hidden;
   }
 
