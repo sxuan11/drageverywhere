@@ -154,7 +154,7 @@ class Drag extends EventEmitter {
   }
 
   setZIndex(num) {
-    this.zIndex = num;
+    this.zIndex = parseInt(num);
   }
 
   // 搜索XY的原点坐标
@@ -240,7 +240,7 @@ class Drag extends EventEmitter {
             id: this.dragSourceMap.get(eleList[i].id).id,
             left: parseFloat(eleList[i].style.transform.substr(10).split(',')[0]),
             top: parseFloat(eleList[i].style.transform.substr(10).split(',')[1]),
-            index: eleList[i].style["z-index"],
+            index: parseInt(eleList[i].style.zIndex),
             width: eleList[i].style.width,
             height: eleList[i].style.height,
           })
@@ -418,7 +418,7 @@ class Drag extends EventEmitter {
         id: this.dragSourceMap.get(this.parentNode.id).id,
         left: parseFloat(this.parentNode.style.transform.substr(10).split(',')[0]),
         top: parseFloat(this.parentNode.style.transform.substr(10).split(',')[1]),
-        index: this.parentNode.style["z-index"],
+        index: parseInt(this.parentNode.style.zIndex),
         width: this.parentNode.style.width,
         height: this.parentNode.style.height,
       }
@@ -445,8 +445,8 @@ class Drag extends EventEmitter {
         id: this.dragSourceMap.get(this.parentNode.id).id,
         left: parseFloat(this.parentNode.style.transform.substr(10).split(',')[0]),
         top: parseFloat(this.parentNode.style.transform.substr(10).split(',')[1]),
-        index: this.parentNode.style["z-index"],
-        width: this.parentNode.style.width,
+        index: this.parentNode.style.zIndex,
+        width: parseInt(this.parentNode.style.zIndex),
         height: this.parentNode.style.height,
       }
     }
@@ -684,7 +684,7 @@ class Drag extends EventEmitter {
         id: this.draggingElement.id,
         left: parseFloat(elementStyle.transform.substr(10).split(',')[0]),
         top: parseFloat(elementStyle.transform.substr(10).split(',')[1]),
-        'z-index': elementStyle["z-index"],
+        index: parseInt(elementStyle["z-index"]),
         parentWidth: this.parentWidth,
         parentHeight: this.parentHeight,
         width: this.initBoxWidth,
@@ -745,7 +745,7 @@ class Drag extends EventEmitter {
       position: 'absolute',
       top: '0px',
       left: '0px',
-      'z-index': e['index'],
+      'z-index': e.index,
       ...this.convertPixel(
         {
           width: e.width,
@@ -921,7 +921,7 @@ class Drag extends EventEmitter {
       position: 'absolute',
       top: '0px',
       left: '0px',
-      'z-index': e['index'],
+      'z-index': e.index,
       ...this.convertListenerPixel(obj)
     }
     setObjectStyle(element, elementStyle);

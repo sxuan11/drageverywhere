@@ -48,23 +48,20 @@ export default {
     this.drags.on('dragFull', () => {
       console.log('dragFull');
     });
-    this.drags.on('drag-out', ({height, id, left, width, parentHeight, parentWidth, top, 'z-index': index}) => {
-      const data = {width, height, id, left, parentHeight, parentWidth, top, index}
-      this.dragMap.set(id, data)
+    this.drags.on('drag-out', (data) => {
+      this.dragMap.set(data.id, data)
       socket.emit('drag-out', data);
     })
     this.drags.on('drag-in', (data) => {
       this.dragMap.delete(data);
       socket.emit('drag-in', data);
     })
-    this.drags.on('drag-move', ({height, id, left, width, parentHeight, parentWidth, top, 'z-index': index}) => {
-      const data = {width, height, id, left, parentHeight, parentWidth, top, index}
-      this.dragMap.set(id, data)
+    this.drags.on('drag-move', (data) => {
+      this.dragMap.set(data.id, data)
       socket.emit('drag-out', data);
     })
-    this.drags.on('drag-zoom', ({height, id, left, width, parentHeight, parentWidth, top, 'z-index': index}) => {
-      const data = {width, height, id, left, parentHeight, parentWidth, top, index}
-      this.dragMap.set(id, data)
+    this.drags.on('drag-zoom', (data) => {
+      this.dragMap.set(data.id, data)
       socket.emit('drag-out', data);
     })
     this.drags.on('changeWidthAndHeight', (result) => {
@@ -74,7 +71,6 @@ export default {
         this.dragMap.set(v.id, v);
         socket.emit('drag-out', v);
       }
-
     })
     socket.emit('init-position');
     socket.on('position', data => {
@@ -86,7 +82,7 @@ export default {
         this.dragMap.set(data[i].id, data[i])
         this.drags.sourceDrawDragBox(data[i]);
       }
-      this.drags.setZIndex(max);
+      max && this.drags.setZIndex(max);
     })
   }
 }
