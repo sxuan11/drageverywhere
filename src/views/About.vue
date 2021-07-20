@@ -8,6 +8,7 @@
     <div class="move-box" id="move-box">
 
     </div>
+    <button>关闭拖拽盒子</button>
   </div>
 </template>
 
@@ -63,7 +64,8 @@ export default {
     socket.on('drag-zoom', this.checkDrag.bind(this))
     socket.emit('init-position');
     socket.on('position', data=>{
-      this.drags.setSourceData(data)
+      // console.log(data, 'data');
+      // this.drags.setSourceData(data)
       for (const i in data) {
         this.checkDrag(data[i])
       }

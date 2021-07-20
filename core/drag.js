@@ -159,7 +159,8 @@ class Drag extends EventEmitter {
 
   // 搜索XY的原点坐标
   searchOriginPoint(emit = true) {
-    const result = document.querySelector(this.dragBox).getBoundingClientRect();
+    const result = document.querySelector(this.dragBox)?.getBoundingClientRect();
+    if(typeof result !== 'object') return;
     this.pointX = result.x;
     this.pointY = result.y;
     const { height, width } = document.body.getBoundingClientRect();
@@ -718,6 +719,21 @@ class Drag extends EventEmitter {
     return result;
   }
 
+  // 删除指定ID的元素
+  destroyById(id) {
+    if (!id){
+      throw new Error('ID parameter is required')
+    }
+    const result = this.sourceMap.get(id);
+    if(typeof result !== 'object') {
+      throw new Error('Cannot find the specified ID element');
+    }
+    const a = document.querySelector('#'+result.drawId);
+    a.parentNode.removeChild(a);
+    const b = document.querySelector('#' + result.imgId);
+    b.parentNode.removeChild(b);
+  }
+
   /**
    * 源重新生成拖拉盒子
    * @param data
@@ -765,7 +781,7 @@ class Drag extends EventEmitter {
       id: e.id,
       imgId,
     }
-    this.sourceMap.set(this.draggingElement.id, sourceInfo);
+    this.sourceMap.set(e.id, sourceInfo);
     this.dragSourceMap.set(elementId, dragInfo)
     parent.appendChild(element);
   }

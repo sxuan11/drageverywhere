@@ -5,9 +5,11 @@
         <Item :id="`item${index}`" :text="index"/>
       </div>
     </div>
-    <div class="move-box" id="move-box">
+    <div v-if="showMove" class="move-box" id="move-box">
 
     </div>
+    <button @click="closeMove">关闭拖拽盒子</button>
+    <button @click="destroyId">销毁指定ID</button>
   </div>
 </template>
 
@@ -28,6 +30,7 @@ export default {
       drags: '',
       socket,
       dragMap: new Map(),
+      showMove: true,
     }
   },
   components: {
@@ -84,6 +87,14 @@ export default {
       }
       max && this.drags.setZIndex(max);
     })
+  },
+  methods: {
+    closeMove() {
+      this.showMove = !this.showMove;
+    },
+    destroyId() {
+      this.drags.destroyById('item5')
+    }
   }
 }
 </script>
