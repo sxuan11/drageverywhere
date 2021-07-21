@@ -1,6 +1,6 @@
 {
   "name": "drageverywhere",
-  "version": "0.0.7",
+  "version": "0.0.8",
   "author": "sxuan",
   "main": "./core/dist/drag-everywhere.bundle.js",
   "description": "Drag to where you want to drag",
@@ -9,6 +9,11 @@
     "dev": "webpack --config core/webpack.dev.config.js",
     "build-core": "webpack --config core/webpack.config.js"
   },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sxuan11/drageverywhere.git"
+  },
+  "license": "MIT",
   "dependencies": {
     "@babel/core": "^7.14.6",
     "@babel/plugin-proposal-optional-chaining": "^7.14.5",

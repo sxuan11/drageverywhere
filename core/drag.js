@@ -7,6 +7,8 @@ class Drag extends EventEmitter {
   sourceBox = '';
   // 被拖入的盒子ID
   dragBox = '';
+  // 参照物盒子元素
+  referBox = 'body';
   // 需要寻找的父盒子被拖拽的className
   dragTargetClassName = '';
   // x轴原点
@@ -116,6 +118,7 @@ class Drag extends EventEmitter {
    * @param aspectRatio 拖拽元素的比例
    * @param dragMinWidth 生成拖拽元素的最小宽度
    * @param dragMaxWidth 生成拖拽元素的最大宽度
+   * @param referBox
    */
   constructor({
                 sourceBox,
@@ -128,11 +131,13 @@ class Drag extends EventEmitter {
                 dragNumber,
                 aspectRatio = '16:9',
                 dragMinWidth,
-                dragMaxWidth
+                dragMaxWidth,
+                referBox
               }) {
     super();
     this.sourceBox = sourceBox;
     this.dragBox = dragBox;
+    this.referBox = referBox ? referBox : 'body';
     this.imgs = imgs;
     this.dragTargetClassName = dragTargetClassName;
     this.initBoxHeight = initBoxHeight ? initBoxHeight : this.initBoxHeight;
@@ -163,7 +168,7 @@ class Drag extends EventEmitter {
     if(typeof result !== 'object') return;
     this.pointX = result.x;
     this.pointY = result.y;
-    const { height, width } = document.body.getBoundingClientRect();
+    const { height, width } = document.querySelector(this.referBox).getBoundingClientRect();
     this.parentWidth = parseFloat(width.toFixed(2));
     this.parentHeight = parseFloat(height.toFixed(2));
     this.calculateXYlength(result);

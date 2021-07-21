@@ -42,6 +42,7 @@ export default {
         {
           sourceBox: '#home-box',
           dragBox: '#move-box',
+          referBox: '#move-box',
           dragTargetClassName: 'c-item',
           imgs: this.imgs,
           dragNumber: 4,
