@@ -95,6 +95,7 @@ export default {
     },
     destroyId() {
       this.drags.destroyById('item5')
+      // this.drags.destroyAll();
     }
   }
 }

@@ -92,3 +92,6 @@ parentHeight:参照盒子的高度度
 |listenerDrawDragBox|监听者绘制拖拽元素|基础数据|
 |listenersPutBackBox|监听者放回元素|id|
 |listenersUpdateBox|监听者更新拖拽元素|基础数据|
+|listenersIndexBox|监听者改变层级|基础数据|
+|destroyById|源销毁指定id元素|id|
+|destroyAll|源销毁所有元素||
