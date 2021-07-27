@@ -83,23 +83,34 @@ export function setObjectStyle(element, styleObject) {
  * 节流函数
  * @param fun
  * @param delay
+ * @param imd 是否立即执行
  * @returns {(function(): void)|*}
  */
-export function throttle(fun, delay) {
+export function throttle(fun, delay, imd=true) {
   let timer = null;
   let startTime = Date.now();
-  return function () {
-    const currentTime = Date.now();
-    const remaining = delay - (currentTime - startTime);
-    const args = arguments;
-    clearTimeout(timer);
-    if (remaining <= 0) {
-      fun.apply(this, args);
-      startTime = Date.now();
-    } else {
-      timer = setTimeout(fun, remaining);
+  if(imd){
+    return function () {
+      const currentTime = Date.now();
+      const remaining = delay - (currentTime - startTime);
+      const args = arguments;
+      clearTimeout(timer);
+      if (remaining <= 0) {
+        fun.apply(this, args);
+        startTime = Date.now();
+      } else {
+        timer = setTimeout(fun, remaining);
+      }
     }
-  };
+  } else {
+    return function(){
+      clearTimeout(timer);
+      timer = setTimeout(()=>{
+        fun.apply(this, arguments);
+      }, delay)
+    }
+  }
+
 }
 
 export function getRectWidth(rect) {

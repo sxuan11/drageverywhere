@@ -47,6 +47,7 @@ export default {
           dragNumber: 4,
           aspectRatio: '16:9',
           dragMaxWidth: 600,
+          emitTime: 1500,
         }
     )
     this.drags.on('dragFull', () => {

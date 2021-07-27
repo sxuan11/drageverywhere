@@ -70,6 +70,7 @@ class Drag extends EventEmitter {
   dragMinWidth = 100;
   dragMinHeight = 0;
   dragNumber = 0;
+  emitTime = 1000;
   baseStyle = {
     position: 'absolute',
     width: '8px',
@@ -130,6 +131,7 @@ class Drag extends EventEmitter {
                 initBoxWidth,
                 dragNumber,
                 aspectRatio = '16:9',
+                emitTime = 1000,
                 dragMinWidth,
                 dragMaxWidth,
                 referBox
@@ -144,6 +146,7 @@ class Drag extends EventEmitter {
     this.initBoxWidth = initBoxWidth ? initBoxWidth : this.initBoxWidth;
     this.dragMaxWidth = dragMaxWidth ? dragMaxWidth : this.dragMaxWidth;
     this.dragMinWidth = dragMinWidth ? dragMinWidth : this.dragMinWidth;
+    this.emitTime = emitTime;
     this.aspectRatio = aspectRatio;
     this.dragNumber = dragNumber;
     if (notListener !== undefined) {
@@ -283,7 +286,7 @@ class Drag extends EventEmitter {
     document.addEventListener('mousedown', this.handleMouseDown.bind(this));
     document.addEventListener('mousemove', this.handleMouseMove.bind(this));
     document.addEventListener('mouseup', this.handleMouseUp.bind(this));
-    this.resizeObserve = new ResizeObserver(throttle(this._searchOriginPoint.bind(this, this.notListener), 1000));
+    this.resizeObserve = new ResizeObserver(throttle(this._searchOriginPoint.bind(this, this.notListener), this.emitTime, false));
     this.resizeObserve.observe(document.querySelector(this.dragBox));
   }
 
