@@ -169,8 +169,8 @@ class Drag extends EventEmitter {
     this.pointX = result.x;
     this.pointY = result.y;
     const { height, width } = document.querySelector(this.referBox).getBoundingClientRect();
-    this.parentWidth = parseFloat(width.toFixed(2));
-    this.parentHeight = parseFloat(height.toFixed(2));
+    this.parentWidth = parseFloat(parseFloat(width).toFixed(2));
+    this.parentHeight = parseFloat(parseFloat(height).toFixed(2));
     this._calculateXYlength(result);
     if (emit) {
       this._isBeyondBoundary();
@@ -428,8 +428,8 @@ class Drag extends EventEmitter {
         width: this.parentNode.style.width,
         height: this.parentNode.style.height,
       }
-      obj.width = parseFloat(obj.width);
-      obj.height = parseFloat(obj.height);
+      obj.width = parseFloat(parseFloat(obj.width).toFixed(2));
+      obj.height = parseFloat(parseFloat(obj.height).toFixed(2));
     }
     this.emit('drag-move', obj)
   }
@@ -452,12 +452,12 @@ class Drag extends EventEmitter {
         left: parseFloat(this.parentNode.style.transform.substr(10).split(',')[0]),
         top: parseFloat(this.parentNode.style.transform.substr(10).split(',')[1]),
         index: this.parentNode.style.zIndex,
-        width: parseInt(this.parentNode.style.zIndex),
+        width: this.parentNode.style.width,
         height: this.parentNode.style.height,
       }
     }
-    obj.width = parseFloat(obj.width);
-    obj.height = parseFloat(obj.height);
+    obj.width = parseFloat(parseFloat(obj.width).toFixed(2));
+    obj.height = parseFloat(parseFloat(obj.height).toFixed(2));
     this.emit('drag-zoom', obj)
   }
 
@@ -693,8 +693,8 @@ class Drag extends EventEmitter {
         index: parseInt(elementStyle["z-index"]),
         parentWidth: this.parentWidth,
         parentHeight: this.parentHeight,
-        width: this.initBoxWidth,
-        height: this.initBoxHeight,
+        width: parseFloat(this.initBoxWidth.toFixed(2)),
+        height: parseFloat(this.initBoxHeight.toFixed(2)),
       })
   }
 
