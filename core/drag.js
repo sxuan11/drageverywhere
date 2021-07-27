@@ -211,7 +211,7 @@ class Drag extends EventEmitter {
 
   // 窗口宽高发生改变上传事件
   _changeWidthAndHeight({height, width}) {
-    this.emit('_changeWidthAndHeight', {parentHeight: height, parentWidth: width})
+    this.emit('changeWidthAndHeight', {parentHeight: height, parentWidth: width})
   }
 
   // 设定源信息
