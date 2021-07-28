@@ -69,6 +69,12 @@ export default {
       this.dragMap.set(data.id, data)
       socket.emit('drag-out', data);
     })
+    this.drags.on('mouseMoving', () => {
+      console.log('move');
+    })
+    this.drags.on('mouseUp', () => {
+      console.log('up');
+    })
     this.drags.on('changeWidthAndHeight', (result) => {
       for (const v of this.dragMap.values()) {
         v.parentHeight = result.parentHeight;

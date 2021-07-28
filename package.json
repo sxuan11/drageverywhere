@@ -1,6 +1,6 @@
 {
   "name": "drageverywhere",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "author": "sxuan",
   "main": "./core/dist/drag-everywhere.bundle.js",
   "description": "Drag to where you want to drag",
@@ -13,6 +13,7 @@
   "files": [
     "core/dist"
   ],
+  "keywords": ["drag", "socket", "javascript", "web", "vue"],
   "repository": {
     "type": "git",
     "url": "https://github.com/sxuan11/drageverywhere.git"

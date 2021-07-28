@@ -117,6 +117,7 @@ class Drag extends EventEmitter {
    * @param initBoxWidth 生成拖拽元素的初始宽度
    * @param dragNumber 最大的拖拽数量
    * @param aspectRatio 拖拽元素的比例
+   * @param emitTime
    * @param dragMinWidth 生成拖拽元素的最小宽度
    * @param dragMaxWidth 生成拖拽元素的最大宽度
    * @param referBox
@@ -410,6 +411,22 @@ class Drag extends EventEmitter {
     }
   }
 
+  /**
+   * 实时上传移动事件
+   * @private
+   */
+  _emitMove() {
+    this.emit('mouseMoving')
+  }
+
+  /**
+   * 上传鼠标松开事件
+   * @private
+   */
+  _emitMouseUp() {
+    this.emit('mouseUp')
+  }
+
   // 上传移动事件
   _reportMove(info) {
     let obj = {
@@ -629,6 +646,7 @@ class Drag extends EventEmitter {
     }
     if (this.dragging) {
       this._moveDragBox(event);
+      this._emitMove();
     }
     if (this.zoom) {
       this.zoomInOut(event);
@@ -652,6 +670,7 @@ class Drag extends EventEmitter {
     if (this.zoom) {
       this._reportZoom({});
     }
+    this._emitMouseUp();
     this.dragging = false;
     this.dropdown = false;
     this.zoom = false;

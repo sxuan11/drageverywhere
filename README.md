@@ -75,14 +75,16 @@ parentWidth:参照盒子的宽度
 
 parentHeight:参照盒子的高度度
 ### 事件
-|事件名|描述|
-|---|---|
-|dragFull|达到拖拽上限|
-|drag-out|有元素被拖出|
-|drag-in|有元素被拖回|
-|drag-move|有元素被改变了位置|
-|drag-zoom|有元素被改变了大小|
-|changeWidthAndHeight|参照元素改变了宽高|
+|事件名|描述|回调参数|
+|---|---|---|
+|dragFull|达到拖拽上限||
+|drag-out|有元素被拖出|基础数据|
+|drag-in|有元素被拖回|id|
+|drag-move|有元素被改变了位置|基础数据|
+|drag-zoom|有元素被改变了大小|基础数据|
+|changeWidthAndHeight|参照元素改变了宽高|{parentHeight,parentWidth}|
+|mouseUp|鼠标松开取消移动过|
+|mouseMoving|鼠标正在移动|
 
 ### 方法
 |方法名|描述|参数|
