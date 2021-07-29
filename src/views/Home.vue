@@ -2,14 +2,14 @@
   <div class="home">
     <div class="home-box" id="home-box">
       <div v-for="(index) of 6" :key="index" style="display: inline-block;" class="home-box-item">
-        <Item :id="`item${index}`" :text="index"/>
+        <Item ref="item" :id="`item${index}`" :text="index"/>
       </div>
     </div>
     <div v-if="showMove" class="move-box" id="move-box">
 
     </div>
     <button @click="closeMove">关闭拖拽盒子</button>
-    <button @click="destroyId">销毁指定ID</button>
+    <button @click="destroyId">销毁指定ID VIDEO5</button>
   </div>
 </template>
 
@@ -46,7 +46,7 @@ export default {
           imgs: this.imgs,
           dragNumber: 4,
           aspectRatio: '16:9',
-          dragMaxWidth: 600,
+          dragMaxWidth: 2600,
           emitTime: 1500,
         }
     )

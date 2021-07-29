@@ -105,6 +105,8 @@ class Drag extends EventEmitter {
   sourceWidth = 0;
   // 源高度
   sourceHeight = 0;
+  // 是否获取过信息
+  _isGetInfor = false;
 
   /**
    * 构造函数
@@ -611,6 +613,133 @@ class Drag extends EventEmitter {
     return result;
   }
 
+  /**
+   * 获取信息
+   * @returns {{dragHeight: number, allHeight: number, eleWidth: number, eleHeight: number, top: number, left: number, allWidth: number, dragWidth: number}}
+   */
+  _getInformation() {
+    const parentNode = findParentNode(this.mouseDownEvent.target, 'drag-box');
+    const { width: dragWidth, height: dragHeight } = document.querySelector(this.dragBox).getBoundingClientRect();
+    const { width, height, transform } = parentNode.style;
+    const eleWidth = parseFloat(width);
+    const eleHeight = parseFloat(height);
+    const left = parseFloat(transform.substr(10).split(',')[0]);
+    const top = parseFloat(transform.substr(10).split(',')[1]);
+    const allWidth = left + eleWidth;
+    const allHeight = top + eleHeight;
+    this._isGetInfor = true;
+    return { parentNode, dragWidth, dragHeight, eleWidth, eleHeight, allWidth, allHeight, left, top }
+  }
+
+  /**
+   * 检查右边是否超出边界
+   * @private
+   */
+  _checkRightBoundary() {
+    const { parentNode, dragWidth, eleWidth, allWidth, left, top } = this._getInformation();
+    const leftDiff = allWidth - dragWidth;
+    let newLeft = left - leftDiff;
+    let style = {};
+    if(newLeft < this.pointX){
+      const widthDiff = this.pointX - newLeft;
+      newLeft = this.pointX;
+      const newWidth = eleWidth - widthDiff;
+      const newHeight = newWidth / this.ratio;
+      style.transform = `translate(${newLeft}px, ${top}px)`;
+      style.width = `${newWidth}px`;
+      style.height = `${newHeight}px`;
+    } else {
+      style.transform = `translate(${newLeft}px, ${top}px)`;
+    }
+    setObjectStyle(parentNode, style);
+  }
+
+  /**
+   * 检查下边是否超出边界
+   * @private
+   */
+  _checkBottomBoundary() {
+    const { parentNode, dragHeight, eleHeight, allHeight, left, top } = this._getInformation();
+    const topDiff = allHeight - dragHeight;
+    let newTop = top - topDiff;
+    let style = {};
+    if(newTop < this.pointY){
+      const heightDiff = this.pointY - newTop;
+      newTop = this.pointY;
+      const newHeight = eleHeight - heightDiff;
+      const newWidth = newHeight * this.ratio;
+      style.transform = `translate(${left}px, ${newTop}px)`;
+      style.width = `${newWidth}px`;
+      style.height = `${newHeight}px`;
+    } else {
+      style.transform = `translate(${left}px, ${newTop}px)`;
+    }
+    setObjectStyle(parentNode, style);
+  }
+
+  /**
+   * 检查左边是否超出边界
+   * @private
+   */
+  _checkLeftBoundary() {
+    const { parentNode, dragWidth, eleWidth, left, top } = this._getInformation();
+    const leftDiff = this.pointX - left;
+    let newLeft = this.pointX;
+    let style = {};
+    if(dragWidth < eleWidth){
+      const newWidth = eleWidth - leftDiff;
+      const newHeight =  newWidth / this.ratio;
+      style.transform = `translate(${newLeft}px, ${top}px)`;
+      style.width = `${newWidth}px`;
+      style.height = `${newHeight}px`;
+    } else {
+      style.transform = `translate(${newLeft}px, ${top}px)`;
+    }
+    setObjectStyle(parentNode, style);
+  }
+
+  /**
+   * 检查上边是否超出边界
+   * @private
+   */
+  _checkTopBoundary() {
+    const { parentNode,  dragHeight,  eleHeight, left, top } = this._getInformation();
+    const topDiff = 0 - top;
+    let newTop = 0;
+    let style = {};
+    if(dragHeight < eleHeight){
+      const newHeight =  eleHeight - topDiff;
+      const newWidth = newHeight * this.ratio;
+      style.transform = `translate(${left}px, ${newTop}px)`;
+      style.width = `${newWidth}px`;
+      style.height = `${newHeight}px`;
+    } else {
+      style.transform = `translate(${left}px, ${newTop}px)`;
+    }
+    setObjectStyle(parentNode, style);
+  }
+
+  /**
+   * 检查放大缩小是否超出了拖动区域
+   * @private
+   */
+  _checkIsZoomOut() {
+    const { dragWidth, dragHeight, allWidth, allHeight, left, top } = this._getInformation();
+    if(allWidth > dragWidth) {
+      this._checkRightBoundary();
+    }
+    if(allHeight > dragHeight){
+      this._checkBottomBoundary();
+    }
+    if(left < this.pointX) {
+      this._checkLeftBoundary();
+    }
+    if(top < 0) {
+      this._checkTopBoundary();
+    }
+    this._reportZoom({});
+  }
+
   // 处理鼠标点击事件
   handleMouseDown(event) {
     if (event.target.id === this.sourceBox.substr(1)) return;
@@ -663,14 +792,16 @@ class Drag extends EventEmitter {
     }
     if (this.putBack) {
       this.putBackDragBox();
+      this._emitMouseUp();
     }
     if (this.dragging && !this.putBack) {
       this._reportMove({});
+      this._emitMouseUp();
     }
     if (this.zoom) {
-      this._reportZoom({});
+      this._checkIsZoomOut()
+      this._emitMouseUp();
     }
-    this._emitMouseUp();
     this.dragging = false;
     this.dropdown = false;
     this.zoom = false;
