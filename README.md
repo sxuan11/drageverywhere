@@ -56,6 +56,7 @@ new Drag({
 |dragMinWidth| 生成拖拽元素的最小宽度 | number |  | 100 |
 |dragMaxWidth| 生成拖拽元素的最大宽度 | number |  | 根据比例和宽度计算 |
 |referBox| 动态计算比例的参照物 | string |  | body |
+|zIndex| 拖动元素的初始层级 | number |  | 100 |
 |emitTime| 改变窗口的事件节流事件 | number |  | 1000 |
 
 ### 基础数据

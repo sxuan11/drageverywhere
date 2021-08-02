@@ -137,6 +137,7 @@ class Drag extends EventEmitter {
                 emitTime = 1000,
                 dragMinWidth,
                 dragMaxWidth,
+                zIndex= 100,
                 referBox
               }) {
     super();
@@ -155,7 +156,7 @@ class Drag extends EventEmitter {
     if (notListener !== undefined) {
       this.notListener = notListener
     }
-    this.initProxy();
+    this.initProxy(zIndex);
     this._searchOriginPoint(this.notListener);
     this._calculateRatio();
     if (this.notListener) {
@@ -173,8 +174,8 @@ class Drag extends EventEmitter {
     this.zIndex.num += 1;
   }
 
-  initProxy() {
-    this.zIndex = new Proxy({num:0}, {
+  initProxy(num) {
+    this.zIndex = new Proxy({num}, {
       get: (target, propKey)=> {
         return target[propKey];
       },
