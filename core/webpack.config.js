@@ -5,23 +5,22 @@ module.exports = {
   output: {
     path: path.resolve(__dirname, 'dist'),
     filename: 'drag-everywhere.bundle.js',
-    clean: true,
-    library: {
-      type: "commonjs",
-    }
+    libraryTarget: "commonjs-module"
   },
   module: {
     rules: [
       {
-        test: /\.js$/,
+        test: /\.js$|jsx/,
         exclude: /node_modules/,
-        use: {
-          loader: "babel-loader",
-          options: {
-            presets: ['@babel/preset-env'],
-            plugins: ['@babel/plugin-proposal-optional-chaining']
+        use: [
+          {
+            loader: "babel-loader",
+            options: {
+              presets: ['@babel/preset-env'],
+              plugins: ['@babel/plugin-proposal-optional-chaining']
+            }
           }
-        }
+        ]
       }
     ]
   }

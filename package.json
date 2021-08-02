@@ -13,7 +13,13 @@
   "files": [
     "core/dist"
   ],
-  "keywords": ["drag", "socket", "javascript", "web", "vue"],
+  "keywords": [
+    "drag",
+    "socket",
+    "javascript",
+    "web",
+    "vue"
+  ],
   "repository": {
     "type": "git",
     "url": "https://github.com/sxuan11/drageverywhere.git"
@@ -32,7 +38,8 @@
     "vue": "^2.6.11",
     "vue-router": "^3.2.0",
     "vuex": "^3.4.0",
-    "webpack": "^5.44.0"
+    "webpack": "^4.46.0",
+    "webpack-cli": "^4.7.2"
   },
   "devDependencies": {
     "@vue/cli-plugin-babel": "~4.5.0",
@@ -45,7 +52,6 @@
     "eslint-plugin-vue": "^6.2.2",
     "sass": "^1.26.5",
     "sass-loader": "^8.0.2",
-    "vue-template-compiler": "^2.6.11",
-    "webpack-cli": "^4.7.2"
+    "vue-template-compiler": "^2.6.11"
   }
 }

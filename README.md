@@ -12,9 +12,9 @@ yarn add drageverywhere
 ## 例子运行
 你可以fork这个仓库，或者下载源代码[地址](https://github.com/sxuan11/drageverywhere.git)
 ```shell
-yarn 
+yarn install --frozen-lockfile
 or 
-npm i
+npm ci
 npm run start_server
 npm run serve
 ```
