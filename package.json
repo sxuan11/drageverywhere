@@ -1,6 +1,6 @@
 {
   "name": "drageverywhere",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "author": "sxuan",
   "main": "./core/dist/drag-everywhere.bundle.js",
   "description": "Drag to where you want to drag",

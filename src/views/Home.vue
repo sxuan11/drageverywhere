@@ -50,6 +50,9 @@ export default {
           emitTime: 1500,
         }
     )
+    this.drags.on('zIndexChange', (index)=>{
+      console.log(index);
+    })
     this.drags.on('dragFull', () => {
       console.log('dragFull');
     });

@@ -52,7 +52,7 @@ class Drag extends EventEmitter {
   // resize监视器
   resizeObserve = '';
   // 全局zIndex
-  zIndex = 5000;
+  zIndex = {};
   // 镜像元素
   _mirror = '';
   // 镜像元素的距离
@@ -155,6 +155,7 @@ class Drag extends EventEmitter {
     if (notListener !== undefined) {
       this.notListener = notListener
     }
+    this.initProxy();
     this._searchOriginPoint(this.notListener);
     this._calculateRatio();
     if (this.notListener) {
@@ -165,7 +166,31 @@ class Drag extends EventEmitter {
   }
 
   setZIndex(num) {
-    this.zIndex = parseInt(num);
+    this.zIndex.num = parseInt(num);
+  }
+
+  zIndexAdd() {
+    this.zIndex.num += 1;
+  }
+
+  initProxy() {
+    this.zIndex = new Proxy({num:0}, {
+      get: (target, propKey)=> {
+        return target[propKey];
+      },
+      set: (obj, prop, value)=> {
+        if (prop === 'num') {
+          if (!Number.isInteger(value)) {
+            throw new TypeError('The zIndex num is not an integer');
+          }
+        }
+        if (obj[prop] !== value){
+          this.emit('zIndexChange', value);
+        }
+        obj[prop] = value;
+        return value;
+      }
+    });
   }
 
   // 搜索XY的原点坐标
@@ -518,8 +543,8 @@ class Drag extends EventEmitter {
     this.draggingRect = this.parentNode.getBoundingClientRect();
     this.xelementLength = this.realXLength - this.draggingRect.width;
     this.yelementLength = this.realYLength - this.draggingRect.height;
-    this.zIndex += 1;
-    this.parentNode.style.zIndex = this.zIndex.toString();
+    this.zIndexAdd();
+    this.parentNode.style.zIndex = this.zIndex.num.toString();
   }
 
   // 外部拖拽进内部
@@ -821,7 +846,7 @@ class Drag extends EventEmitter {
       width: this.initBoxWidth + this.unit,
       height: this.initBoxHeight + this.unit,
       transform: this._styleMake(event),
-      'z-index': this.zIndex
+      'z-index': this.zIndex.num,
     }
     setObjectStyle(element, elementStyle);
     const elementId = this.draggingElement.id + '-drag';
@@ -1197,5 +1222,6 @@ class Drag extends EventEmitter {
     element.style.zIndex = info['index'];
   }
 }
+
 
 export default Drag;

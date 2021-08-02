@@ -85,6 +85,7 @@ parentHeight:参照盒子的高度度
 |changeWidthAndHeight|参照元素改变了宽高|{parentHeight,parentWidth}|
 |mouseUp|鼠标松开取消移动过|
 |mouseMoving|鼠标正在移动|
+|zIndexChange|内部层级发生改变|
 
 ### 方法
 |方法名|描述|参数|
