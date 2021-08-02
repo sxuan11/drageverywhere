@@ -122,6 +122,7 @@ class Drag extends EventEmitter {
    * @param emitTime
    * @param dragMinWidth 生成拖拽元素的最小宽度
    * @param dragMaxWidth 生成拖拽元素的最大宽度
+   * @param zIndex
    * @param referBox
    */
   constructor({
@@ -770,7 +771,6 @@ class Drag extends EventEmitter {
   handleMouseDown(event) {
     if (event.target.id === this.sourceBox.substr(1)) return;
     this.mouseDownEvent = event;
-    event.preventDefault();
     this.putBack = false;
     this.dragging = false;
     this.zoom = false;
@@ -796,6 +796,7 @@ class Drag extends EventEmitter {
   // 处理鼠标移动事件
   handleMouseMove(event) {
     if (!this.dragging && !this.dropdown && !this.zoom) return;
+    event.preventDefault();
     if (this.dropdown) {
       this._mirrorNodeMove(event);
     }

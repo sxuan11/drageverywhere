@@ -8,6 +8,7 @@
     <div v-if="showMove" class="move-box" id="move-box">
 
     </div>
+    <input type="text" />
     <button @click="closeMove">关闭拖拽盒子</button>
     <button @click="destroyId">销毁指定ID VIDEO5</button>
   </div>
