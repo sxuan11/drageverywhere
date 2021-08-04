@@ -907,8 +907,10 @@ class Drag extends EventEmitter {
   /**
    * 删除指定ID的元素
    * @param id
+   * @param sourceDel
+   * @param placeDel
    */
-  destroyById(id) {
+  destroyById(id, sourceDel= true, placeDel =  true) {
     if (!id){
       throw new Error('ID parameter is required')
     }
@@ -916,17 +918,21 @@ class Drag extends EventEmitter {
     if(typeof result !== 'object') {
       throw new Error('Cannot find the specified ID element');
     }
-    const a = document.querySelector('#'+result.drawId);
-    try {
-      a?.parentNode.removeChild(a);
-    } catch (e){
+    if(sourceDel){
+      const a = document.querySelector('#'+result.drawId);
+      try {
+        a?.parentNode.removeChild(a);
+      } catch (e){
 
+      }
     }
-    const b = document.querySelector('#' + result.imgId);
-    try {
-      b?.parentNode.removeChild(b);
-    } catch (e) {
+    if(placeDel){
+      const b = document.querySelector('#' + result.imgId);
+      try {
+        b?.parentNode.removeChild(b);
+      } catch (e) {
 
+      }
     }
     this.sourceMap.delete(id);
     this.dragSourceMap.delete(result.drawId);
