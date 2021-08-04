@@ -917,9 +917,17 @@ class Drag extends EventEmitter {
       throw new Error('Cannot find the specified ID element');
     }
     const a = document.querySelector('#'+result.drawId);
-    a.parentNode.removeChild(a);
+    try {
+      a?.parentNode.removeChild(a);
+    } catch (e){
+
+    }
     const b = document.querySelector('#' + result.imgId);
-    b.parentNode.removeChild(b);
+    try {
+      b?.parentNode.removeChild(b);
+    } catch (e) {
+
+    }
     this.sourceMap.delete(id);
     this.dragSourceMap.delete(result.drawId);
   }
