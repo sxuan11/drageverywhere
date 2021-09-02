@@ -107,6 +107,7 @@ class Drag extends EventEmitter {
   sourceHeight = 0;
   // 是否获取过信息
   _isGetInfor = false;
+  isMakePlaceImg= true;
 
   /**
    * 构造函数
@@ -124,6 +125,7 @@ class Drag extends EventEmitter {
    * @param dragMaxWidth 生成拖拽元素的最大宽度
    * @param zIndex
    * @param referBox
+   * @param isMakePlaceImg
    */
   constructor({
                 sourceBox,
@@ -139,11 +141,13 @@ class Drag extends EventEmitter {
                 dragMinWidth,
                 dragMaxWidth,
                 zIndex= 100,
-                referBox
+                referBox,
+                isMakePlaceImg = true,
               }) {
     super();
     this.sourceBox = sourceBox;
     this.dragBox = dragBox;
+    this.isMakePlaceImg = isMakePlaceImg;
     this.referBox = referBox ? referBox : 'body';
     this.imgs = imgs;
     this.dragTargetClassName = dragTargetClassName;
@@ -416,7 +420,7 @@ class Drag extends EventEmitter {
     const id = 'id' + Date.now().toString();
     inside.id = drawId ? drawId + '-img' : id;
     try {
-      draggingElement.parentNode.replaceChild(inside, draggingElement);
+      this.isMakePlaceImg ? draggingElement.parentNode.replaceChild(inside, draggingElement) : '';
       return inside.id;
     } catch (e) {
       console.log(e)
