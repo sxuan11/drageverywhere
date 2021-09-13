@@ -107,7 +107,8 @@ class Drag extends EventEmitter {
   sourceHeight = 0;
   // 是否获取过信息
   _isGetInfor = false;
-  isMakePlaceImg= true;
+  // 是否开启拖动
+  canDrag = true;
 
   /**
    * 构造函数
@@ -125,7 +126,7 @@ class Drag extends EventEmitter {
    * @param dragMaxWidth 生成拖拽元素的最大宽度
    * @param zIndex
    * @param referBox
-   * @param isMakePlaceImg
+   * @param canDrag 是否可以拖动
    */
   constructor({
                 sourceBox,
@@ -142,12 +143,12 @@ class Drag extends EventEmitter {
                 dragMaxWidth,
                 zIndex= 100,
                 referBox,
-                isMakePlaceImg = true,
+                canDrag=true,
               }) {
     super();
     this.sourceBox = sourceBox;
     this.dragBox = dragBox;
-    this.isMakePlaceImg = isMakePlaceImg;
+    this.canDrag = canDrag;
     this.referBox = referBox ? referBox : 'body';
     this.imgs = imgs;
     this.dragTargetClassName = dragTargetClassName;
@@ -420,7 +421,7 @@ class Drag extends EventEmitter {
     const id = 'id' + Date.now().toString();
     inside.id = drawId ? drawId + '-img' : id;
     try {
-      this.isMakePlaceImg ? draggingElement.parentNode.replaceChild(inside, draggingElement) : '';
+      draggingElement.parentNode.replaceChild(inside, draggingElement);
       return inside.id;
     } catch (e) {
       console.log(e)
@@ -773,6 +774,7 @@ class Drag extends EventEmitter {
 
   // 处理鼠标点击事件
   handleMouseDown(event) {
+    if (!this.canDrag) return;
     if (event.target.id === this.sourceBox.substr(1)) return;
     this.mouseDownEvent = event;
     this.putBack = false;
@@ -836,6 +838,14 @@ class Drag extends EventEmitter {
     this.dragging = false;
     this.dropdown = false;
     this.zoom = false;
+  }
+
+  /**
+   * 设定当前是否可以拖动
+   * @param {boolean} status
+   */
+  setCanDrag(status) {
+    this.canDrag = status
   }
 
   // 生成拖拉盒子

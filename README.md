@@ -58,6 +58,7 @@ new Drag({
 |referBox| 动态计算比例的参照物 | string |  | body |
 |zIndex| 拖动元素的初始层级 | number |  | 100 |
 |emitTime| 改变窗口的事件节流事件 | number |  | 1000 |
+|canDrag| 设定当前是否可以拖动 | boolean |  | true |
 
 ### 基础数据
 id:被拖出元素的ID
@@ -100,3 +101,4 @@ parentHeight:参照盒子的高度度
 |listenersIndexBox|监听者改变层级|基础数据|
 |destroyById|源销毁指定id元素|id|
 |destroyAll|源销毁所有元素||
+|setCanDrag|设定当前是否可以拖动|boolean|
