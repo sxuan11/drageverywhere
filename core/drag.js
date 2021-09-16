@@ -543,6 +543,20 @@ class Drag extends EventEmitter {
     this.dragSourceMap.delete(this.parentNode.id);
   }
 
+  // 返回拖拽盒子
+  putBackDragBoxById(sourceId) {
+    const element = document.querySelector('#' + this.sourceMap.get(sourceId).imgId);
+    const dragBox = document.querySelector('#' + this.sourceMap.get(sourceId).drawId);
+    element.replaceWith(dragBox.childNodes[0])
+    document.querySelector(this.dragBox).removeChild(dragBox);
+    const id = this.dragSourceMap.get(dragBox.id).id;
+    this.emit('drag-in', {
+      id
+    });
+    this.sourceMap.delete(id);
+    this.dragSourceMap.delete(dragBox.id);
+  }
+
   // 内部拖拽
   insideDrag(event) {
     this.dragging = true;
@@ -959,9 +973,9 @@ class Drag extends EventEmitter {
     if(!this.sourceMap.size) return;
     for (const item of this.sourceMap.values()){
       const a = document.querySelector('#'+item.drawId);
-      a.parentNode.removeChild(a);
+      a?.parentNode?.removeChild(a);
       const b = document.querySelector('#' + item.imgId);
-      b.parentNode.removeChild(b);
+      b?.parentNode?.removeChild(b);
     }
     this.sourceMap.clear();
     this.dragSourceMap.clear();

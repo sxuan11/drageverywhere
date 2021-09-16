@@ -102,3 +102,4 @@ parentHeight:参照盒子的高度度
 |destroyById|源销毁指定id元素|id|
 |destroyAll|源销毁所有元素||
 |setCanDrag|设定当前是否可以拖动|boolean|
+|putBackDragBoxById|放回指定元素|源元素id string|
