@@ -996,7 +996,8 @@ class Drag extends EventEmitter {
    */
   sourceDrawDragBox(data) {
     const e = typeof data === 'object' ? data : JSON.parse(data);
-    const draggingElement = document.querySelector("#" + e.id)
+    const draggingElement = document.querySelector("#" + e.id);
+    if(!draggingElement) return;
     const imgId = this._makePlaceholderImg(draggingElement, e.id);
     const parent = document.querySelector(this.dragBox);
     const element = document.createElement('div');
@@ -1165,7 +1166,8 @@ class Drag extends EventEmitter {
    */
   listenerDrawDragBox(data) {
     const e = typeof data === 'object' ? data : JSON.parse(data);
-    const draggingElement = document.querySelector("#" + e.id)
+    const draggingElement = document.querySelector("#" + e.id);
+    if (!draggingElement) return;
     const imgId = this._makePlaceholderImg(draggingElement, e.id);
     const parent = document.querySelector(this.dragBox);
     const element = document.createElement('div');
