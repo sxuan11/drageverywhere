@@ -73,8 +73,8 @@ class Drag extends EventEmitter {
   emitTime = 1000;
   baseStyle = {
     position: 'absolute',
-    width: '8px',
-    height: '8px',
+    width: '12px',
+    height: '12px',
     zIndex: 5000,
   };
   aspectRatio = '16:9';
@@ -109,6 +109,7 @@ class Drag extends EventEmitter {
   _isGetInfor = false;
   // 是否开启拖动
   canDrag = true;
+  imgPlaceStyle = {};
 
   /**
    * 构造函数
@@ -127,6 +128,7 @@ class Drag extends EventEmitter {
    * @param zIndex
    * @param referBox
    * @param canDrag 是否可以拖动
+   * @param imgPlaceStyle
    */
   constructor({
                 sourceBox,
@@ -144,6 +146,7 @@ class Drag extends EventEmitter {
                 zIndex= 100,
                 referBox,
                 canDrag=true,
+                imgPlaceStyle,
               }) {
     super();
     this.sourceBox = sourceBox;
@@ -159,6 +162,7 @@ class Drag extends EventEmitter {
     this.emitTime = emitTime;
     this.aspectRatio = aspectRatio;
     this.dragNumber = dragNumber;
+    this.imgPlaceStyle = imgPlaceStyle;
     if (notListener !== undefined) {
       this.notListener = notListener
     }
@@ -409,15 +413,20 @@ class Drag extends EventEmitter {
   _makePlaceholderImg(draggingElement = this.draggingElement, drawId = '') {
     const inside = document.createElement('div');
     const img = document.createElement('img');
+    const name = document.createElement('span');
+    name.innerText = draggingElement.getAttribute('img-text');
     const style = {
       height: '100%',
       width: '100%',
     }
     setObjectStyle(inside, style);
+    setObjectStyle(inside, { position: 'relative' });
     setObjectStyle(img, style);
+    setObjectStyle(name, this.imgPlaceStyle);
     img.style.objectFit = 'cover';
     img.src = this.imgs;
     inside.appendChild(img);
+    inside.appendChild(name);
     const id = 'id' + Date.now().toString();
     inside.id = drawId ? drawId + '-img' : id;
     try {
@@ -576,6 +585,20 @@ class Drag extends EventEmitter {
     this.yelementLength = this.realYLength - this.initBoxHeight;
     this._makeMirrorNode(this.draggingElement);
     this.dropdown = true;
+  }
+
+  /**
+   * 放盒子到拖拽区域
+   * @param id
+   * @returns {boolean}
+   */
+  putInDragBoxById(id) {
+    this.draggingElement = document.querySelector(id);
+    const dragBox = document.querySelector(this.dragBox);
+    if(dragBox.contains(this.draggingElement)) return false;
+    this.draggingRect = this.draggingElement.getBoundingClientRect();
+    const { width, height } = dragBox.getBoundingClientRect();
+    return this.makeDragBox('', `translate(${width / 2 - this.initBoxWidth}px, ${height / 2 - this.initBoxHeight}px)`);
   }
 
   // 记录放大缩小的值
@@ -863,7 +886,7 @@ class Drag extends EventEmitter {
   }
 
   // 生成拖拉盒子
-  makeDragBox(event) {
+  makeDragBox(event, transform) {
     const inPlaceId = this._makePlaceholderImg(this.draggingElement, this.draggingElement.id);
     const parent = document.querySelector(this.dragBox);
     const element = document.createElement('div');
@@ -875,7 +898,7 @@ class Drag extends EventEmitter {
       left: '0px',
       width: this.initBoxWidth + this.unit,
       height: this.initBoxHeight + this.unit,
-      transform: this._styleMake(event),
+      transform: transform ? transform : this._styleMake(event),
       'z-index': this.zIndex.num,
     }
     setObjectStyle(element, elementStyle);
@@ -904,6 +927,7 @@ class Drag extends EventEmitter {
         width: parseFloat(this.initBoxWidth.toFixed(2)),
         height: parseFloat(this.initBoxHeight.toFixed(2)),
       })
+    return true;
   }
 
   /**
@@ -1066,32 +1090,32 @@ class Drag extends EventEmitter {
       return {
         ...this.baseStyle,
         cursor: 'nwse-resize',
-        top: '-2px',
-        left: '-2px',
+        top: '-4px',
+        left: '-4px',
       }
     }
     if (direction === 'tr') {
       return {
         ...this.baseStyle,
         cursor: 'nesw-resize',
-        top: '-2px',
-        right: '-2px',
+        top: '-4px',
+        right: '-4px',
       }
     }
     if (direction === 'bl') {
       return {
         ...this.baseStyle,
         cursor: 'nesw-resize',
-        left: '-2px',
-        bottom: '-2px',
+        left: '-4px',
+        bottom: '-4px',
       }
     }
     if (direction === 'br') {
       return {
         ...this.baseStyle,
         cursor: 'nwse-resize',
-        right: '-2px',
-        bottom: '-2px',
+        right: '-4px',
+        bottom: '-4px',
       }
     }
   }

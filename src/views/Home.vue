@@ -2,15 +2,18 @@
   <div class="home">
     <div class="home-box" id="home-box">
       <div v-for="(index) of 6" :key="index" style="display: inline-block;" class="home-box-item">
-        <Item ref="item" :id="`item${index}`" :text="index"/>
+        <Item ref="item" :id="`item${index}`" :text="index" :img-text="`hhhh-${index}`"/>
       </div>
     </div>
     <div v-if="showMove" class="move-box" id="move-box">
 
     </div>
-    <button @click="putback">返回指定ID</button>
-    <button @click="closeMove">关闭拖拽盒子</button>
-    <button @click="destroyId">销毁指定ID VIDEO5</button>
+    <div style="display: flex;">
+      <button @click="putback">返回指定ID</button>
+      <button @click="putOut">放出ItemRandom</button>
+      <button @click="closeMove">关闭拖拽盒子</button>
+      <button @click="destroyId">销毁指定ID VIDEO5</button>
+    </div>
   </div>
 </template>
 
@@ -49,6 +52,14 @@ export default {
           aspectRatio: '16:9',
           dragMaxWidth: 2600,
           emitTime: 1500,
+          imgPlaceStyle: {
+            position: 'absolute',
+            top: '50%',
+            color: '#fff',
+            width: '100%',
+            "z-index": '1',
+            left: '50%'
+          }
         }
     )
     this.drags.on('zIndexChange', (index)=>{
@@ -110,6 +121,12 @@ export default {
     },
     putback() {
       this.drags.putBackDragBoxById('item5')
+    },
+    putOut() {
+      // const random = Math.floor(Math.random() * 10);
+      // const confirmRandom  = random < 7 ? random : 6;
+      // console.log(confirmRandom, 'random');
+      this.drags.putInDragBoxById('#item5')
     }
   }
 }

@@ -42,23 +42,24 @@ new Drag({
 ```
 
 ### 参数说明
-| 参数 | 说明 | 类型 | 必要的 | 默认值 |
-| --- | --- | --- | --- | --- |
-|sourceBox| 需要被拖动的父盒子(源区域)ID | String  | * | - |
-|dragBox| 被拖入的盒子(目标区域)ID | String | * | - |
-|dragTargetClassName(目标元素)| 目标拖动元素类名 | String | * | - |
-|imgs| 被拖走元素的占位图 | Base64 or url | * | - |
-|initBoxWidth| 生成拖拽元素的初始宽度 | number | * | 300 |
-|notListener| 是否不是监听者 | Boolean |  | true |
-|initBoxHeight| 生成拖拽元素的初始高度 | number |  | 根据比例和宽度计算 |
-|dragNumber| 最大的拖拽数量 | number |  | 4 |
-|aspectRatio| 拖拽元素的比例 | string |  | 16:9 |
-|dragMinWidth| 生成拖拽元素的最小宽度 | number |  | 100 |
-|dragMaxWidth| 生成拖拽元素的最大宽度 | number |  | 根据比例和宽度计算 |
-|referBox| 动态计算比例的参照物 | string |  | body |
-|zIndex| 拖动元素的初始层级 | number |  | 100 |
-|emitTime| 改变窗口的事件节流事件 | number |  | 1000 |
-|canDrag| 设定当前是否可以拖动 | boolean |  | true |
+| 参数 | 说明               | 类型            | 必要的 | 默认值       |
+| --- |------------------|---------------| --- |-----------|
+|sourceBox| 需要被拖动的父盒子(源区域)ID | String        | * | -         |
+|dragBox| 被拖入的盒子(目标区域)ID   | String        | * | -         |
+|dragTargetClassName(目标元素)| 目标拖动元素类名         | String        | * | -         |
+|imgs| 被拖走元素的占位图        | Base64 or url | * | -         |
+|imgPlaceStyle| 占位图的文字样式         | object        |  | -         |
+|initBoxWidth| 生成拖拽元素的初始宽度      | number        | * | 300       |
+|notListener| 是否不是监听者          | Boolean       |  | true      |
+|initBoxHeight| 生成拖拽元素的初始高度      | number        |  | 根据比例和宽度计算 |
+|dragNumber| 最大的拖拽数量          | number        |  | 4         |
+|aspectRatio| 拖拽元素的比例          | string        |  | 16:9      |
+|dragMinWidth| 生成拖拽元素的最小宽度      | number        |  | 100       |
+|dragMaxWidth| 生成拖拽元素的最大宽度      | number        |  | 根据比例和宽度计算 |
+|referBox| 动态计算比例的参照物       | string        |  | body      |
+|zIndex| 拖动元素的初始层级        | number        |  | 100       |
+|emitTime| 改变窗口的事件节流事件      | number        |  | 1000      |
+|canDrag| 设定当前是否可以拖动       | boolean       |  | true      |
 
 ### 基础数据
 id:被拖出元素的ID
