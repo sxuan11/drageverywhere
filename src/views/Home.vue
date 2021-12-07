@@ -52,14 +52,6 @@ export default {
           aspectRatio: '16:9',
           dragMaxWidth: 2600,
           emitTime: 1500,
-          imgPlaceStyle: {
-            position: 'absolute',
-            top: '50%',
-            color: '#fff',
-            width: '100%',
-            "z-index": '1',
-            left: '50%'
-          }
         }
     )
     this.drags.on('zIndexChange', (index)=>{

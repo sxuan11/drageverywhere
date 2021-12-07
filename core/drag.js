@@ -162,7 +162,7 @@ class Drag extends EventEmitter {
     this.emitTime = emitTime;
     this.aspectRatio = aspectRatio;
     this.dragNumber = dragNumber;
-    this.imgPlaceStyle = imgPlaceStyle;
+    this.imgPlaceStyle = imgPlaceStyle ?? {};
     if (notListener !== undefined) {
       this.notListener = notListener
     }
